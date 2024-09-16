@@ -1,0 +1,9 @@
+{
+    "test":[
+        [[1100,500],[2000,500], 0, "Load Menu 2", "loadmenu", ["test2"]],
+        [[1,1],[2000,500], 0, "Load Test Level", "loadlevel", ["test"]]
+    ],
+    "test2":[
+        [[1100,500],[2000,500], 0, "Load Menu 1", "loadmenu", ["test"]]
+    ]
+}

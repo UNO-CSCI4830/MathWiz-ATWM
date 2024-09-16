@@ -1,0 +1,21 @@
+The non-code files (mostly json right now) have no comments, so here's a quick rundown on what everything is:
+*WITHIN THE ROOT*
+-menus.json
+	A list of objects that must be spawned in to make a specific menu formation.
+-objects.json
+	A list of objects that may be spawned in regular gameplay (the player, enemies, etc.). Contains (or, will contain eventually) stuff like hitbox sizes, physics attributes, sprite coordinates, animation instructions, etc.
+-Save.json
+	Blank ATM but will ultimately store save data (has the player unlocked a specific unlockable, has the player beaten x or y stage, etc.)
+-tiles.json
+	Information about the tiles that make up the levels (pallates, spritecoordinates, etc.).
+*WITHIN THE ASSETS FOLDER*
+There is only one image in the folder so far. Eventually, there should be sub-folders that split assets into different categories (images, music, etc.)
+*WITHIN THE LEVELDATA FOLDER*
+All levels follow the same format, so here's a quick rundown
+-layerdepths: the depths that each layer should be rendered at
+-tiles,flips,rotates,pallates: each of these is a multi-level array with three layers:
+	-layers of tiles to be rendered on top of one another,
+		-rows of horizontal tiles, and
+			-individual tiles.
+The four arrays contain exactly the information you'd expect: the type of tile, the way it's been flipped, the way it's been rotated, and the pallate it's to be rendered with.
+-objects: list of objects that should be spawned in the level, and where.

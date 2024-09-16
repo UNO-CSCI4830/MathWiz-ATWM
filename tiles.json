@@ -1,0 +1,24 @@
+{
+    "tiles":{
+        "0":"Air",
+        "1":"TestSolid1",
+        "2":"TestSolid2",
+        "3":"TestSolid3",
+        "4":"TestSolid4",
+        "5":"TestSlope451",
+        "6":"TestSlope452",
+        "7":"TestSlope453",
+        "8":"TestSlopeL221",
+        "9":"TestSlopeL222",
+        "10":"TestSlopeH221",
+        "11":"TestSlopeH222",
+        "12":"TestSlopeH223",
+        "13":"TestSlopeH224",
+        "14":"TestSlab1",
+        "15":"TestSlab2"
+    },
+    "terraintypes":[0,1,1,1,1,2,2,2,3,3,4,4,4,4,5,5],
+    "pallates":{
+        
+    }
+}
