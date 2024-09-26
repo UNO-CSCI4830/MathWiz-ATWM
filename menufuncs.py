@@ -18,7 +18,7 @@ def loadmenu(menuname):
     #import statement down here to prevent import loop. Perhaps a better way to do this exists?
     import menu
     for entity in menudata[menuname]:
-        state.objects.append(menu.MenuObj(entity[0],entity[1],entity[2],entity[3],entity[4],entity[5]))
+        menu.MenuObj(entity[0],entity[1],entity[2],entity[3],entity[4],entity[5])
         
 #load a level as prescribed by the json file
 def loadlevel(levelname):

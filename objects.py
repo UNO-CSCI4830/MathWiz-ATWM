@@ -1,8 +1,8 @@
 """
 Filename: objects.py
 Author(s): Talieisn Reese
-Version: 1.0
-Date: 9/9/2024
+Version: 1.1
+Date: 9/26/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
@@ -20,7 +20,7 @@ class gameObject:
         #add to list of objects that are updated every frame
         state.objects.append(self)
         #resort list to ensure objects are rendered in the correct order
-        state.objects.sort(key = lambda item: item.depth)
+        state.objects.sort(key = lambda item: item.depth, reverse = True)
     #remove self from object list
     def delete(self):
         state.objects.remove(self)
@@ -32,9 +32,9 @@ class character(gameObject):
         #extra variables handle things unique to objects with more logic: movement, gravity, grounded state, etc.
         self.speed = [0,0]
         self.direction = 1
-        self.maxfall = 150
+        self.maxfall = 50
         self.maxspeed = 20
-        self.gravity = 15
+        self.gravity = 10
         self.grounded = True
         self.actiontimer = 0
         self.name = name
@@ -60,55 +60,61 @@ class character(gameObject):
 
     #check if a point is colliding with the ground. Add logic for moving platforms later
     def pointcollide(self, point):
-        #get the tile that the point is positioned on
-        tile = [int(point[0]//state.tilesize),int(point[1]//state.tilesize)]
-        #get values from said tile
-        try:
-            tiletype = state.level.tilemap[self.depth][tile[1]][tile[0]]
-            tileflip = state.level.flipmap[self.depth][tile[1]][tile[0]]
-            tilerotate = state.level.spinmap[self.depth][tile[1]][tile[0]]
-        #unless it doesn't exist. Then, treat it as if it were solid to prevent out-of-bounds errors
-        except:
-            tiletype = 1
-            tileflip = 0
-            tilerotate = 0
-        #calculate the position of the point within the tile
-        x=point[0]%state.tilesize
-        y=point[1]%state.tilesize
+        #find layers to do collision on:
+        for item in state.objects:
+            if type(item).__name__ == "drawlayer" and item.depth == self.depth:
+                #get the tile that the point is positioned on
+                tile = [int(point[0]//state.tilesize),int(point[1]//state.tilesize)]
+                #get values from said tile
+                try:
+                    #UNLESS the layer is supposed to loop--THEN simply loop the information from the list
+                    if item.loop == True:
+                        tile = [tile[0]%(item.longest), tile[1]%(len(state.level.tilemap[item.layernum]))]
+                    tiletype = state.level.tilemap[item.layernum][tile[1]][tile[0]]
+                    tileflip = state.level.flipmap[item.layernum][tile[1]][tile[0]]
+                    tilerotate = state.level.spinmap[item.layernum][tile[1]][tile[0]]
+                #unless it doesn't exist. Then, treat it as if it were solid to prevent out-of-bounds errors
+                except:
+                    tiletype = 1
+                    tileflip = 0
+                    tilerotate = 0
+                #calculate the position of the point within the tile
+                x=point[0]%state.tilesize
+                y=point[1]%state.tilesize
 
-        #treat the coordinates differently if the tile is flipped and/or rotated
-        if tileflip == 1:
-            x = state.tilesize - x
-        elif tileflip == 2:
-            x = state.tilesize - x
-            y = state.tilesize - y
-        elif tileflip == 3:
-            y = state.tilesize - y
+                #treat the coordinates differently if the tile is flipped and/or rotated
+                if tileflip == 1:
+                    x = state.tilesize - x
+                elif tileflip == 2:
+                    x = state.tilesize - x
+                    y = state.tilesize - y
+                elif tileflip == 3:
+                    y = state.tilesize - y
 
-        if tilerotate == 1:
-            burner = y
-            y = x
-            x = state.tilesize - burner
-        elif tilerotate == 2:
-            x = state.tilesize - x
-            y = state.tilesize - y
-        elif tilerotate == 3:
-            burner = x
-            x = y
-            y = state.tilesize - burner
-        #get the results of the appropriate block collision equation
-        if state.tilesource["terraintypes"][tiletype] == 1:
-            return tilecollisions.solid((x,y))
-        elif state.tilesource["terraintypes"][tiletype] == 2:
-            return tilecollisions.fortyfive((x,y))
-        elif state.tilesource["terraintypes"][tiletype] == 3:
-            return tilecollisions.lowtwentytwo((x,y))
-        elif state.tilesource["terraintypes"][tiletype] == 4:
-            return tilecollisions.hightwentytwo((x,y))
-        elif state.tilesource["terraintypes"][tiletype] == 5:
-            return tilecollisions.slab((x,y))
-        else:
-            return False
+                if tilerotate == 1:
+                    burner = y
+                    y = x
+                    x = state.tilesize - burner
+                elif tilerotate == 2:
+                    x = state.tilesize - x
+                    y = state.tilesize - y
+                elif tilerotate == 3:
+                    burner = x
+                    x = y
+                    y = state.tilesize - burner
+                #get the results of the appropriate block collision equation
+                if state.tilesource["tiles"][str(tiletype)][5] == 1:
+                    return tilecollisions.solid((x,y))
+                elif state.tilesource["tiles"][str(tiletype)][5] == 2:
+                    return tilecollisions.fortyfive((x,y))
+                elif state.tilesource["tiles"][str(tiletype)][5] == 3:
+                    return tilecollisions.lowtwentytwo((x,y))
+                elif state.tilesource["tiles"][str(tiletype)][5] == 4:
+                    return tilecollisions.hightwentytwo((x,y))
+                elif state.tilesource["tiles"][str(tiletype)][5] == 5:
+                    return tilecollisions.slab((x,y))
+                else:
+                    return False
 
     #calculate physics for the object
     def physics(self):
@@ -198,24 +204,25 @@ class character(gameObject):
 class Player(character):
     #this update is the same as the one for generic characters, but it allows the player to control it.
     def update(self):
-        self.physics()
-        self.playerControl()
-        #print(self.speed)
-        self.move()
-        self.collide()
+        if state.gamemode != "edit":
+            self.physics()
+            self.playerControl()
+            #print(self.speed)
+            self.move()
+            self.collide()
         self.render()
     #perform moves from the moves library based on the status of input
     def playerControl(self):
         #run the jump function if the spacebar is down
         if state.keys[pygame.K_SPACE] or pygame.K_SPACE in state.newkeys:
-            moves.jump(self,125)
+            moves.jump(self,100)
         #walk left or right if the a or d keys are pressed. Swap directions accordingly unless the shift key is held.
         if state.keys[pygame.K_a]:
             if not state.keys[pygame.K_LSHIFT] and not state.keys[pygame.K_RSHIFT]:
                 self.direction = -1
-            moves.walk(self,-150)
+            moves.walk(self,-20)
         if state.keys[pygame.K_d]:
             if not state.keys[pygame.K_LSHIFT] and not state.keys[pygame.K_RSHIFT]:
                 self.direction = 1
-            moves.walk(self,150)
+            moves.walk(self,20)
             

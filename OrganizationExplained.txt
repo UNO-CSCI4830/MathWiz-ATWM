@@ -8,8 +8,10 @@ The non-code files (mostly json right now) have no comments, so here's a quick r
 	Blank ATM but will ultimately store save data (has the player unlocked a specific unlockable, has the player beaten x or y stage, etc.)
 -tiles.json
 	Information about the tiles that make up the levels (pallates, spritecoordinates, etc.).
+	Tiles are stored like this:
+		<numbercode>:[<name>,<location on spritesheet for top left corner>,<size of graphic>,<location on blank tile to place graphic>]
 *WITHIN THE ASSETS FOLDER*
-There is only one image in the folder so far. Eventually, there should be sub-folders that split assets into different categories (images, music, etc.)
+Assets for the game's presentation. Art goes in the images folder. Music/Sound folder(s?) to be added later
 *WITHIN THE LEVELDATA FOLDER*
 All levels follow the same format, so here's a quick rundown
 -layerdepths: the depths that each layer should be rendered at

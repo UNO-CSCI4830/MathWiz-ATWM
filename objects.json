@@ -1,5 +1,6 @@
 {
     "MathWiz":{
+        "Type":"player",
         "Frames":{},
         "Animations":{},
         "Pallates":{},
