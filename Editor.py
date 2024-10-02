@@ -1,8 +1,8 @@
 """
 Filename: Editor.py
 Author(s): Taliesin Reese
-Version: 1.3
-Date: 10/01/2024
+Version: 1.4
+Date: 10/02/2024
 Purpose: Level Editor for MathWiz!
 """
 
@@ -103,7 +103,6 @@ def main():
                 pygame.quit()
                 quit()
 def move():
-    print(state.cam.focus)
     if state.keys[pygame.K_a]:
         state.cam.focus[0] -= state.tilesize
     if state.keys[pygame.K_d]:
