@@ -1,7 +1,7 @@
 """
 Filename: Editor.py
 Author(s): Taliesin Reese
-Version: 1.2
+Version: 1.3
 Date: 10/01/2024
 Purpose: Level Editor for MathWiz!
 """
@@ -44,6 +44,7 @@ def main():
     state.tools = createtoolbox()
     state.renderdepth = 0
     state.renderlayer = 0
+    state.cam.depth = -(1-state.level.parallaxes[state.renderlayer])
     state.editobjs =[]
     state.groupselect = [[],[]]
     state.currentlayer = None
@@ -102,6 +103,7 @@ def main():
                 pygame.quit()
                 quit()
 def move():
+    print(state.cam.focus)
     if state.keys[pygame.K_a]:
         state.cam.focus[0] -= state.tilesize
     if state.keys[pygame.K_d]:
