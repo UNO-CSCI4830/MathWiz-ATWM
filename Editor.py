@@ -1,8 +1,8 @@
 """
 Filename: Editor.py
 Author(s): Taliesin Reese
-Version: 1.0
-Date: 9/26/2024
+Version: 1.2
+Date: 10/01/2024
 Purpose: Level Editor for MathWiz!
 """
 
@@ -46,6 +46,7 @@ def main():
     state.renderlayer = 0
     state.editobjs =[]
     state.groupselect = [[],[]]
+    state.currentlayer = None
     while True:
         #position of the mouse cursor relative to the window. Adjusted for the scaling.
         state.mouse = pygame.mouse.get_pos()
@@ -58,7 +59,9 @@ def main():
         for item in state.objects:
             if type(item) == level.drawlayer:
                 if item.layernum == state.renderlayer:
+                    item.render()
                     item.update()
+                    state.parallaxmod = item.parallax-state.cam.depth
             else:
                 if item.depth == state.renderdepth:
                     item.update()
@@ -226,6 +229,7 @@ def load():
     setlayer()
     try:
         state.objects = []
+        state.editobjs = []
         state.level = level.level(levelname)
         state.layercount = len(state.level.tilemap)
         state.Layerswitch.config(to = state.layercount-1)
@@ -250,8 +254,8 @@ def setlayer():
     state.cam.depth = -(1-state.level.parallaxes[state.renderlayer])
     state.Depthswitch.delete(0,"end")
     state.Depthswitch.insert(0,state.renderdepth)
-    state.Depthswitch.delete(0,"end")
-    state.Depthswitch.insert(0,state.level.parallaxes[state.renderlayer])
+    state.Parallaxswitch.delete(0,"end")
+    state.Parallaxswitch.insert(0,state.level.parallaxes[state.renderlayer])
 
 def setlayerdepth():
     try:
@@ -307,7 +311,7 @@ def blank():
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
     
 def blockdrawupdate():
-    tile = [int((state.mouse[0]+state.cam.pos[0])//state.tilesize),int((state.mouse[1]+state.cam.pos[1])//state.tilesize)]
+    tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     #print(tile)
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
     pygame.draw.rect(state.display,(0,255,0),(locusupdate[0],locusupdate[1],state.tilesize,state.tilesize),10)
@@ -354,7 +358,7 @@ def blockdrawupdate():
             state.groupselect = [[],[]]
 
 def colordrawupdate():
-    tile = [int((state.mouse[0]+state.cam.pos[0])//state.tilesize),int((state.mouse[1]+state.cam.pos[1])//state.tilesize)]
+    tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     #print(tile)
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
     pygame.draw.rect(state.display,(0,255,0),(locusupdate[0],locusupdate[1],state.tilesize,state.tilesize),10)
@@ -396,7 +400,7 @@ def colordrawupdate():
             state.groupselect = [[],[]]
 
 def flipdrawupdate():
-    tile = [int((state.mouse[0]+state.cam.pos[0])//state.tilesize),int((state.mouse[1]+state.cam.pos[1])//state.tilesize)]
+    tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
     pygame.draw.rect(state.display,(0,255,0),(locusupdate[0],locusupdate[1],state.tilesize,state.tilesize),10)
     if state.click[0] and not state.wasclick[0]:
@@ -427,19 +431,23 @@ def flipdrawupdate():
             print("Cannot flip, Out of Bounds")
 
 def spindrawupdate():
-    tile = [int((state.mouse[0]+state.cam.pos[0])//state.tilesize),int((state.mouse[1]+state.cam.pos[1])//state.tilesize)]
+    tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
     pygame.draw.rect(state.display,(0,255,0),(locusupdate[0],locusupdate[1],state.tilesize,state.tilesize),10)
     if state.click[0] and not state.wasclick[0]:
         try:
-            check = state.level.spinmap[state.renderlayer][tile[1]][tile[0]]
-            draw(state.level.spinmap,tile,check+1)
+            check = state.level.spinmap[state.renderlayer][tile[1]][tile[0]]+1
+            if check > 3:
+                check = 0
+            if check < 0:
+                check = 3
+            draw(state.level.spinmap,tile,check)
         except Exception as e:
             print("Cannot spin, Out of Bounds")
 
 def rowaddupdate():
     rows = int(state.addamt.get())
-    tile = [int((state.mouse[0]+state.cam.pos[0])//state.tilesize),int((state.mouse[1]+state.cam.pos[1])//state.tilesize)]
+    tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     #print(tile)
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
     pygame.draw.rect(state.display,(0,255,0),(-10,locusupdate[1],state.screensize[0]+20,state.tilesize),10)
@@ -448,7 +456,7 @@ def rowaddupdate():
 
 def coladdupdate():
     cols = int(state.addamt.get())
-    tile = [int((state.mouse[0]+state.cam.pos[0])//state.tilesize),int((state.mouse[1]+state.cam.pos[0])//state.tilesize)]
+    tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     #print(tile)
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
     pygame.draw.rect(state.display,(0,255,0),(locusupdate[0],-10,state.tilesize,state.screensize[1]+20),10)
