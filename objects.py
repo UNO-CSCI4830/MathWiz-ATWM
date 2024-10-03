@@ -225,4 +225,34 @@ class Player(character):
             if not state.keys[pygame.K_LSHIFT] and not state.keys[pygame.K_RSHIFT]:
                 self.direction = 1
             moves.walk(self,20)
-            
+
+
+class Projectile(gameObject):
+
+    def __int__(self, location, speed, acceleration, damage, depth, creator):
+        self.pos = location
+        self.speed = speed
+        self.depth = depth
+        self.acceleration = acceleration
+        self.damage = damage
+        self.allegiance = creator
+
+        state.objects.append(self)
+        # resort list to ensure objects are rendered in the correct order
+        state.objects.sort(key=lambda item: item.depth, reverse=True)
+
+        def move():
+            self.pos[1] += self.speed[1] * state.deltatime
+            self.pos[0] += self.speed[0] * state.deltatime
+
+        def accelerate():
+            self.speed = (self.speed[0] + acceleration, self.speed[1] + acceleration)
+
+        def hit(target):
+            # Dummy function for hitting something
+            # if(tile):
+            #    do Tile Animation
+            # elif(target != self.allegiance):
+            #     target.health -= self.damage
+
+            self.delete()
