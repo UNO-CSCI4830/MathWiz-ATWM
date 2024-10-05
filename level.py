@@ -1,8 +1,8 @@
 """
 Filename: level.py
 Author(s): Taliesin Reese
-Verion: 1.2
-Date: 10/02/2024
+Verion: 1.3
+Date: 10/05/2024
 Purpose: Level class and functions for "MathWiz!"
 """
 import pygame
@@ -80,6 +80,7 @@ class drawlayer:
         self.calclinemap()
         
     def render(self):
+        self.workcanvas.fill((0,0,0))
         #iterate through every row of tiles, and every tile.
         for row in range(len(self.level.tilemap[0])):
             for tile in range(len(self.level.tilemap[self.layernum][row])):

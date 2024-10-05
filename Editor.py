@@ -1,8 +1,8 @@
 """
 Filename: Editor.py
 Author(s): Taliesin Reese
-Version: 1.4
-Date: 10/02/2024
+Version: 1.5
+Date: 10/05/2024
 Purpose: Level Editor for MathWiz!
 """
 
