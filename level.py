@@ -1,7 +1,7 @@
 """
 Filename: level.py
 Author(s): Taliesin Reese
-Verion: 1.3
+Verion: 1.4
 Date: 10/05/2024
 Purpose: Level class and functions for "MathWiz!"
 """
@@ -36,21 +36,10 @@ class level:
 class drawlayer:
     def __init__(self,level,layernum):
         self.level = level
-        #find the longest row in the layer
-        self.longest = 0
-        for row in self.level.tilemap[layernum]:
-            if len(row)>self.longest:
-                self.longest = len(row)
-        #get longest column
-        self.tallest = len(self.level.tilemap[layernum])
-        #width and height in pixels
-        self.width = self.longest*state.tilesize
-        self.height = self.tallest*state.tilesize
+        self.layernum = layernum
+        self.calcsize()
         #map of lines to be used for updated collision detection
         self.linemap = []
-        self.workcanvas = pygame.Surface((self.width,self.height)).convert()
-        if state.gamemode == "play":
-            self.workcanvas.set_colorkey(state.invis)
             
         self.brush = pygame.Surface((state.tilesize,state.tilesize)).convert()
         self.brush.fill(state.invis)
@@ -72,7 +61,6 @@ class drawlayer:
         #the depth will be useful to add parallax scrolling
         self.depth = self.level.depths[layernum]
         self.parallax = self.level.parallaxes[layernum]
-        self.layernum = layernum
         #whenever a new thing is added to the object list, the list has to be sorted so that things are in the correct order
         state.objects.append(self)
         state.objects.sort(key = lambda item: item.depth, reverse = True)
@@ -138,6 +126,22 @@ class drawlayer:
                 #render layer
                 self.workcanvas.blit(pygame.transform.flip(pygame.transform.rotate(self.brush,self.rotate),self.flipx,self.flipy),(tile*state.tilesize,row*state.tilesize))
         #drop layer into display
+
+    def calcsize(self):
+        #find the longest row in the layer
+        self.longest = 0
+        for row in self.level.tilemap[self.layernum]:
+            if len(row)>self.longest:
+                self.longest = len(row)
+        #get longest column
+        self.tallest = len(self.level.tilemap[self.layernum])
+        #width and height in pixels
+        self.width = self.longest*state.tilesize
+        self.height = self.tallest*state.tilesize
+        #canvas on which the level is to be drawn
+        self.workcanvas = pygame.Surface((self.width,self.height)).convert()
+        if state.gamemode == "play":
+            self.workcanvas.set_colorkey(state.invis)
 
     def calclinemap(self):
         for row in range(len(self.level.tilemap[self.layernum])):
