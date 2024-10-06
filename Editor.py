@@ -1,8 +1,8 @@
 """
 Filename: Editor.py
 Author(s): Taliesin Reese
-Version: 1.3
-Date: 10/01/2024
+Version: 1.6
+Date: 10/05/2024
 Purpose: Level Editor for MathWiz!
 """
 
@@ -48,6 +48,8 @@ def main():
     state.editobjs =[]
     state.groupselect = [[],[]]
     state.currentlayer = None
+    #whether or not the level has been altered since last frame
+    state.levelchanged = False
     while True:
         #position of the mouse cursor relative to the window. Adjusted for the scaling.
         state.mouse = pygame.mouse.get_pos()
@@ -60,13 +62,15 @@ def main():
         for item in state.objects:
             if type(item) == level.drawlayer:
                 if item.layernum == state.renderlayer:
-                    item.render()
+                    if state.levelchanged:
+                        item.render()
                     item.update()
                     state.parallaxmod = item.parallax-state.cam.depth
             else:
                 if item.depth == state.renderdepth:
                     item.update()
-    
+        #reset the changed status for upcoming loops
+        state.levelchanged = False
         #handle editor functions
         move()
         state.tools.update()
@@ -103,7 +107,6 @@ def main():
                 pygame.quit()
                 quit()
 def move():
-    print(state.cam.focus)
     if state.keys[pygame.K_a]:
         state.cam.focus[0] -= state.tilesize
     if state.keys[pygame.K_d]:
@@ -326,11 +329,13 @@ def blockdrawupdate():
             
         try:
             draw(state.level.tilemap,tile,state.drawval)
+            state.levelchanged = True
         except:
             print("Cannot Place, Out of Bounds")
     elif state.click[2] == True:
         try:
             draw(state.level.tilemap,tile,0)
+            state.levelchanged = True
         except:
             print("Cannot Erase, Out of Bounds")
     else:
@@ -355,6 +360,7 @@ def blockdrawupdate():
                         state.drawval = 1
                     try:
                         draw(state.level.tilemap,[state.groupselect[0][0]+tile,state.groupselect[0][1]+row],state.drawval)
+                        state.levelchanged = True
                     except:
                         print("Cannot Place, Out of Bounds")
             state.groupselect = [[],[]]
@@ -373,6 +379,7 @@ def colordrawupdate():
             
         try:
             draw(state.level.pallatemap,tile,state.colorval)
+            state.levelchanged = True
         except:
             print("Cannot Color, Out of Bounds")
     else:
@@ -397,6 +404,7 @@ def colordrawupdate():
                         state.colorval = 0
                     try:
                         draw(state.level.pallatemap,[state.groupselect[0][0]+tile,state.groupselect[0][1]+row],state.colorval)
+                        state.levelchanged = True
                     except:
                         print("Cannot Color, Out of Bounds")
             state.groupselect = [[],[]]
@@ -410,12 +418,16 @@ def flipdrawupdate():
             check = state.level.flipmap[state.renderlayer][tile[1]][tile[0]]
             if check == 0:
                 draw(state.level.flipmap,tile,1)
+                state.levelchanged = True
             elif check == 1:
                 draw(state.level.flipmap,tile,0)
+                state.levelchanged = True
             elif check == 2:
                 draw(state.level.flipmap,tile,3)
+                state.levelchanged = True
             elif check == 3:
                 draw(state.level.flipmap,tile,2)
+                state.levelchanged = True
         except Exception as e:
             print("Cannot flip, Out of Bounds")
     elif state.click[2] and not state.wasclick[2]:
@@ -423,12 +435,16 @@ def flipdrawupdate():
             check = state.level.flipmap[state.renderlayer][tile[1]][tile[0]]
             if check == 0:
                 draw(state.level.flipmap,tile,3)
+                state.levelchanged = True
             elif check == 1:
                 draw(state.level.flipmap,tile,2)
+                state.levelchanged = True
             elif check == 2:
                 draw(state.level.flipmap,tile,1)
+                state.levelchanged = True
             elif check == 3:
                 draw(state.level.flipmap,tile,0)
+                state.levelchanged = True
         except:
             print("Cannot flip, Out of Bounds")
 
@@ -444,6 +460,7 @@ def spindrawupdate():
             if check < 0:
                 check = 3
             draw(state.level.spinmap,tile,check)
+            state.levelchanged = True
         except Exception as e:
             print("Cannot spin, Out of Bounds")
 
@@ -455,6 +472,7 @@ def rowaddupdate():
     pygame.draw.rect(state.display,(0,255,0),(-10,locusupdate[1],state.screensize[0]+20,state.tilesize),10)
     if state.click[0] and not state.wasclick[0]:
         addheight(tile,rows)
+        state.levelchanged = True
 
 def coladdupdate():
     cols = int(state.addamt.get())
@@ -464,6 +482,7 @@ def coladdupdate():
     pygame.draw.rect(state.display,(0,255,0),(locusupdate[0],-10,state.tilesize,state.screensize[1]+20),10)
     if state.click[0] and not state.wasclick[0]:
         addwidth(tile,cols)
+        state.levelchanged = True
         
 def addheight(target, rowstoadd):
     #find longest row in level tileset
@@ -476,10 +495,13 @@ def addheight(target, rowstoadd):
     for zero in range(longest):
         add.append(1)
     for row in range(rowstoadd):
-        state.level.tilemap[state.renderlayer].insert(target[1],add)
-        state.level.pallatemap[state.renderlayer].insert(target[1],add)
-        state.level.spinmap[state.renderlayer].insert(target[1],add)
-        state.level.flipmap[state.renderlayer].insert(target[1],add)
+        state.level.tilemap[state.renderlayer].insert(target[1],add.copy())
+        state.level.pallatemap[state.renderlayer].insert(target[1],add.copy())
+        state.level.spinmap[state.renderlayer].insert(target[1],add.copy())
+        state.level.flipmap[state.renderlayer].insert(target[1],add.copy())
+    for object in state.objects:
+        if type(object)==level.drawlayer and object.layernum == state.renderlayer:
+            object.calcsize()
 
 def addwidth(target, colstoadd):
     #add values into all the rows
@@ -489,6 +511,9 @@ def addwidth(target, colstoadd):
             state.level.pallatemap[state.renderlayer][row].insert(target[0],1)
             state.level.spinmap[state.renderlayer][row].insert(target[0],1)
             state.level.flipmap[state.renderlayer][row].insert(target[0],1)
+    for object in state.objects:
+        if type(object)==level.drawlayer and object.layernum == state.renderlayer:
+            object.calcsize()
 
 def addLayer():
     num = state.renderlayer

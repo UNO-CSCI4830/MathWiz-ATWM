@@ -51,9 +51,8 @@ while True:
     state.mouse = (state.mouse[0]*state.screensize[0]/800,state.mouse[1]*state.screensize[1]/800)
     #current state of the mouse buttons
     state.click = pygame.mouse.get_pressed()
-    #current state of keyboard keys
-    state.keys = pygame.key.get_pressed()
-    for event in pygame.event.get():
+    events = pygame.event.get()
+    for event in events:
         #quit logic
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -61,8 +60,15 @@ while True:
         if event.type == pygame.KEYDOWN:
             #if a key is newly down on this frame, it's important. Add it to newkeys
             state.newkeys.append(event.key)
+    #current state of keyboard keys
+    state.keys = pygame.key.get_pressed()
+    
+    """FOR TESTING UNDER HEAVY LAG:"""
+    #from time import sleep
+    #sleep(0.25)
+
     #calculate deltatime. This is used to augment certain values and keep the speed of things independent from the framerate
-    state.deltatime = state.fpsTarget*clock.get_time()/(1000)
+    state.deltatime = 2#state.fpsTarget*clock.get_time()/(1000)
     #print(state.deltatime)
     #reset display
     state.display.fill((0,0,0))
