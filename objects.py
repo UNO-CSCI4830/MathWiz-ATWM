@@ -42,7 +42,6 @@ class character(gameObject):
         #sprite used to show player. Replace these calls with animation frame draws
         self.sprite = pygame.Surface(self.size)
         self.sprite.fill((255,0,0))
-        pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
 
     #run every frame to update the character's logic    
     def update(self):
@@ -202,6 +201,9 @@ class character(gameObject):
             state.display.blit(pygame.transform.flip(self.sprite,True,False),[self.pos[0]-state.cam.pos[0],self.pos[1]-state.cam.pos[1]])
         
 class Player(character):
+    def __init__(self,locus,depth,name):
+        super().__init__(locus,depth,name)
+        pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
     #this update is the same as the one for generic characters, but it allows the player to control it.
     def update(self):
         if state.gamemode != "edit":
@@ -225,4 +227,24 @@ class Player(character):
             if not state.keys[pygame.K_LSHIFT] and not state.keys[pygame.K_RSHIFT]:
                 self.direction = 1
             moves.walk(self,20)
-            
+
+class Dust(character):
+    # I used the character class since dust is a moving particle
+    def __init__(self,locus,depth,name):
+        # eventually want direction and duration (for diminishing size) as parameters 
+        super().__init__(locus,depth,name)
+        self.sprite.fill((205,133,63))
+        self.speed = [3,0]                                                  # speed of particle - eventually replace this with another parameter
+        self.original_size = state.objectsource[name]["Sizes"]["Default"]   # original size of dust - tried adding some sizes but the game crashed as a result
+        self.size = self.original_size                                      # current size of dust - updated related to time
+        self.duration = 1                                                   # measured in seconds - eventually replace with yet another parameter
+        self.end_time = pygame.time.get_ticks() + self.duration * 1000      # don't know if this works properly with deltatime
+    def update(self):
+        # eventually put rotate in here - rotation variable could probably be a random number not as a parameter
+        # again, don't know if this works properly with deltatime
+        self.size[0] = self.original_size[0] - (self.original_size[0] * pygame.time.get_ticks() / self.end_time)
+        self.size[1] = self.original_size[1] - (self.original_size[1] * pygame.time.get_ticks() / self.end_time)
+        if pygame.time.get_ticks() >= self.end_time:
+            self.delete()
+        self.move()
+        self.render()   # right now it renders as another player, but I want it to *just* be a square of whatever color unless we get a sprite for it

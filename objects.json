@@ -7,5 +7,17 @@
         "Sizes":{
             "Default":[240,240]
         }
+    },
+    "Dust":{
+        "Type":"dust",
+        "Frames":{},
+        "Animations":{},
+        "Pallates":{},
+        "Sizes":{
+            "Big":[20,20],
+            "Default":[15,15],
+            "Medium":[10,10],
+            "Small":[5,5]
+        }
     }
 }
