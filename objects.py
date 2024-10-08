@@ -379,8 +379,8 @@ class character(gameObject):
             state.display.blit(pygame.transform.flip(self.sprite,True,False),[self.pos[0]-state.cam.pos[0],self.pos[1]-state.cam.pos[1]])
         
 class Player(character):
-    def __init__(self,locus,depth,name):
-        super().__init__(locus,depth,name)
+    def __init__(self,locus,depth,parallax,name):
+        super().__init__(locus,depth,parallax,name)
         pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
     #this update is the same as the one for generic characters, but it allows the player to control it.
     def update(self):
@@ -422,9 +422,9 @@ class Player(character):
 
 class Dust(character):
     # I used the character class since dust is a moving particle
-    def __init__(self,locus,depth,name):
+    def __init__(self,locus,depth,parallax,name):
         # eventually want direction and duration (for diminishing size) as parameters 
-        super().__init__(locus,depth,name)
+        super().__init__(locus,depth,parallax,name)
         self.sprite.fill((205,133,63))
         self.speed = [3,0]                                                  # speed of particle - eventually replace this with another parameter
         self.original_size = state.objectsource[name]["Sizes"]["Default"]   # original size of dust - tried adding some sizes but the game crashed as a result
