@@ -1,8 +1,8 @@
 """
 Filename: moves.py
 Author(s): Taliesin Reese
-Version: 1.1
-Date: 10/02/2024
+Version: 1.2
+Date: 10/9/2024
 Purpose: moves to be used in "MathWiz!"
 """
 import GameData as state
@@ -32,3 +32,9 @@ def setforce(caller,force):
 def addforce(caller,force):
     caller.speed[0]+=force[0]*state.deltatime
     caller.speed[1]+=force[1]*state.deltatime
+
+def collapsestart(caller,Nix):
+    caller.collapsing = True
+    
+def delete(caller,burner):
+    caller.delete()

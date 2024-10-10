@@ -7,5 +7,61 @@
         "Sizes":{
             "Default":[240,240]
         }
+    },
+    "ExponentPlatform":{
+        "Type":"Platform",
+        "Frames":{},
+        "Animations":{},
+        "Pallates":{},
+        "Sizes":{
+            "Default":[480,480]
+        }
+    },
+    "ExponentWrongPlatform":{
+        "Type":"CollapsingPlatform",
+        "Frames":{},
+        "Animations":{},
+        "Pallates":{},
+        "Sizes":{
+            "Default":[480,480]
+        }
+    },
+    "ExponenetSign":{
+        "Type":"Sign",
+        "Frames":{},
+        "Animations":{},
+        "Pallates":{},
+        "Sizes":{
+            "Default":[240,240]
+        }
+    },
+    "ExponentQuestionSpawner":{
+        "Type":"spawner",
+        "Frames":{},
+        "Animations":{},
+        "Pallates":{},
+        "Sizes":{
+            "Default":[0,0]
+        },
+        "Spawntype":"random",
+        "Objlist":[
+            [["Sign","ExponenetSign",[-120,-240],"parent","parent",["2^2"]],
+            ["Platform","ExponentPlatform",[240,240],"parent","parent",[]],
+            ["Sign","ExponenetSign",[240,0],"parent","parent",["4"]],
+            ["CollapsingPlatform","ExponentWrongPlatform",[720,240],"parent","parent",[]],
+            ["Sign","ExponenetSign",[720,0],"parent","parent",["22"]],
+            ["CollapsingPlatform","ExponentWrongPlatform",[1200,240],"parent","parent",[]],
+            ["Sign","ExponenetSign",[1200,0],"parent","parent",["2"]]],
+
+            [["Sign","ExponenetSign",[-120,-240],"parent","parent",["10^3"]],
+            ["Platform","ExponentPlatform",[720,240],"parent","parent",[]],
+            ["Sign","ExponenetSign",[720,0],"parent","parent",["1000"]],
+            ["CollapsingPlatform","ExponentWrongPlatform",[240,240],"parent","parent",[]],
+            ["Sign","ExponenetSign",[240,0],"parent","parent",["100"]],
+            ["CollapsingPlatform","ExponentWrongPlatform",[1200,240],"parent","parent",[]],
+            ["Sign","ExponenetSign",[1200,0],"parent","parent",["300"]]]
+        ],
+        "DeleteCondition":"offcamera",
+        "SpawnCondition":"entercamera"
     }
 }

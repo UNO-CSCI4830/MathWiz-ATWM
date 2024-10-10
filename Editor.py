@@ -1,8 +1,8 @@
 """
 Filename: Editor.py
 Author(s): Taliesin Reese
-Version: 1.6
-Date: 10/05/2024
+Version: 1.7
+Date: 10/09/2024
 Purpose: Level Editor for MathWiz!
 """
 
@@ -68,7 +68,7 @@ def main():
                     state.parallaxmod = item.parallax-state.cam.depth
             else:
                 if item.depth == state.renderdepth:
-                    item.update()
+                    item.render()
         #reset the changed status for upcoming loops
         state.levelchanged = False
         #handle editor functions
@@ -97,7 +97,7 @@ def main():
         pygame.display.flip()
         state.cam.update()
         state.window.fill((0,0,0))
-        state.display.fill((0,0,0))
+        state.display.fill((255,0,255))
         state.wasclick = state.click
             
         #quit

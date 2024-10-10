@@ -1,8 +1,8 @@
 """
 Filename: main.py
 Author(s): Taliesin Reese
-Verion: 1.1
-Date: 9/26/2024
+Verion: 1.2
+Date: 10/9/2024
 Purpose: Core file for "MathWiz!"
 """
 #premade library imports
@@ -32,6 +32,10 @@ clock = pygame.time.Clock()
 #initialize game stuffs
 state.gamemode = "play"
 state.invis = (255,0,255)
+state.movetickamount = 120
+state.deltatime = 1
+state.adjustdeltatime = True
+state.writer = pygame.font.SysFont("Arial",150)
 state.tilesource = json.load(open("tiles.json"))
 state.tilesheet = pygame.image.load("Assets/images/tiles.png").convert()
 state.objectsource = json.load(open("objects.json"))
@@ -68,7 +72,8 @@ while True:
     #sleep(0.25)
 
     #calculate deltatime. This is used to augment certain values and keep the speed of things independent from the framerate
-    state.deltatime = 2#state.fpsTarget*clock.get_time()/(1000)
+    if state.adjustdeltatime:
+        state.deltatime = state.fpsTarget*clock.get_time()/(1000)
     #print(state.deltatime)
     #reset display
     state.display.fill((0,0,0))
@@ -76,6 +81,7 @@ while True:
     state.cam.update()
     for thing in state.objects:
         thing.update()
+
     #display
     state.window.blit(pygame.transform.scale(state.display,(800,800)),(0,0))
     pygame.display.flip()
