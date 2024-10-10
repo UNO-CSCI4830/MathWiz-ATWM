@@ -1,8 +1,8 @@
 """
 Filename: objects.py
 Author(s): Talieisn Reese
-Version: 1.2
-Date: 10/2/2024
+Version: 1.3
+Date: 10/9/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
@@ -10,11 +10,12 @@ import GameData as state
 import json
 import tilecollisions
 import moves
+import random
 from functools import partial
 
 #basic class to build other objects onto
 class gameObject:
-    def __init__(self, locus, depth, parallax):
+    def __init__(self, locus, depth, parallax, extras):
         self.pos = locus
         self.lastpos = locus
         self.depth = depth
@@ -26,14 +27,18 @@ class gameObject:
         state.objects.sort(key = lambda item: item.depth, reverse = True)
     #remove self from object list
     def delete(self):
-        state.objects.remove(self)
+        try:
+            state.objects.remove(self)
+        except:
+            pass
 
 #slightly less basic class to build characters on--players, enemies, moving platforms, bosses, etc.
 class character(gameObject):
-    def __init__(self,locus,depth,parallax,name):
-        super().__init__(locus,depth,parallax)
+    def __init__(self,locus,depth,parallax,name,extras):
+        super().__init__(locus,depth,parallax,extras)
         #extra variables handle things unique to objects with more logic: movement, gravity, grounded state, etc.
         self.speed = [0,0]
+        self.movement = [0,0]
         self.direction = 1
         self.maxfall = 50
         self.maxspeed = 20
@@ -48,20 +53,28 @@ class character(gameObject):
         self.lasttop = self.top.copy()
         self.lastleft = self.left.copy()
         self.lastright = self.right.copy()
+        self.collidepoints = [self.left,self.top,self.right,self.bottom,self.lastleft,self.lasttop,self.lastright,self.lastbottom]
+        self.xlowestpoint = self.collidepoints[0]
+        self.xhighestpoint = self.collidepoints[0]
+        self.ylowestpoint = self.collidepoints[0]
+        self.yhighestpoint = self.collidepoints[0]
         #the action queue is used to hold the current action.
         self.actionqueue = []
         #a dictionary of hurtboxes that this object can spawn--a dictionary is used so that we can activate and deactivate them by name. Will likely be used more for enemies than for MathWiz himself
         self.hurtboxes = {}
         #sprite used to show player. Replace these calls with animation frame draws
         self.sprite = pygame.Surface(self.size)
-        self.sprite.fill((255,0,0))
-        pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
 
     #run every frame to update the character's logic    
     def update(self):
         self.actionupdate()
         self.physics()
-        self.move()
+        self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
+        while self.movement != [0,0]:
+            self.move()
+            self.collide()
+            self.objcollide()
+        self.objcollide()
         self.collide()
         self.render()
         self.lastpos = self.pos.copy()
@@ -85,7 +98,7 @@ class character(gameObject):
                         if getattr(self,action[2][1]) == action[2][2]:
                             self.actionqueue.remove(action)
                     case "state":
-                        if getattr(self,action[2][1]) == action[2][2]:
+                        if getattr(state,action[2][1]) == action[2][2]:
                             self.actionqueue.remove(action)
                     case "keys":
                         if state.keys[action[2][1]] == action[2][2]:
@@ -97,10 +110,10 @@ class character(gameObject):
         
     #calcualte the points to use in collision detection
     def getpoints(self):
-        self.left = [self.pos[0],self.pos[1]+self.size[1]/2]
-        self.right = [self.pos[0]+self.size[0],self.pos[1]+self.size[1]/2]
-        self.top = [self.pos[0]+self.size[0]/2,self.pos[1]]
-        self.bottom = [self.pos[0]+self.size[0]/2,self.pos[1]+self.size[1]]
+        self.left = [self.pos[0],int(self.pos[1]+self.size[1]/2)]
+        self.right = [self.pos[0]+self.size[0],int(self.pos[1]+self.size[1]/2)]
+        self.top = [int(self.pos[0]+self.size[0]/2),self.pos[1]]
+        self.bottom = [int(self.pos[0]+self.size[0]/2),self.pos[1]+self.size[1]]
 
     #check if a point is colliding with the ground. Add logic for moving platforms later
     def pointcollide(self, point):
@@ -160,129 +173,6 @@ class character(gameObject):
                 else:
                     return False
 
-    #determine collision based on the vectors surrounding level geometry--this should become standard issue.
-    #this could be far more efficient if we cull vectors based on ineligibility for collision.
-    def vectorpointhandlecollide(self,vector,axis,polarity):
-        for item in state.objects:
-            #get the linedata of the layers that the player should collide with
-            if type(item).__name__ == "drawlayer" and item.parallax == self.parallax:
-                linedata = item.linemap
-                for line in linedata:
-                    #if the stage is set to loop, compensate for the player's position.
-                    #this modifier determines how much the offset of an object should be affected by it's distance from the camera in z space...sort of.
-                    if item.loop:
-                        screenplacemod = [((self.pos[0])//item.width)*item.width,
-                                        ((self.pos[1])//item.height)*item.height]
-                    else:
-                        screenplacemod = (0,0)
-                    #print(screenplacemod)
-                    line = [[line[0][0]+screenplacemod[0],line[0][1]+screenplacemod[1]],
-                            [line[1][0]+screenplacemod[0],line[1][1]+screenplacemod[1]]]
-                    collidepoint = self.vectorcollide(vector,line)
-                    if collidepoint != None:
-                        difference = [vector[1][0]-self.pos[0],vector[1][1]-self.pos[1]]
-                        collidedif = vector[0][axis] - vector[1][axis]
-                        try:
-                            if polarity == collidedif/abs(collidedif):
-                                self.pos[axis] = collidepoint[axis]-difference[axis]
-                                vector = (vector[0],[collidepoint[0],collidepoint[1]])
-                                self.getpoints()
-                        except ZeroDivisionError:
-                            pass
-
-    #then,check collisions
-    def vectorcollide(self,vector,line):
-        #calculate the slopes of both lines
-        #get offset of function. If it is a vertical line, offset behaves slightly different: it is the x value.
-        try:
-            moveslope = (vector[0][1]-vector[1][1])/(vector[0][0]-vector[1][0])
-            moveoffset = vector[0][1]-moveslope*vector[0][0]
-        except ZeroDivisionError:
-            moveslope = "cringe"
-            moveoffset = vector[0][0]
-        try:
-            lineslope = (line[0][1]-line[1][1])/(line[0][0]-line[1][0])
-            lineoffset = line[0][1]-lineslope*line[0][0]
-        except ZeroDivisionError:
-            lineslope = "cringe"
-            lineoffset = line[0][0]
-        text = pygame.font.SysFont("Comic Sans MS", 100)
-        state.display.blit(text.render(f"{lineslope}", 0, (255,0,0)),(line[0][0],line[0][1]))
-
-
-        """if lineslope == 0 and line[0][1]==2520:
-            print(round(vector[0][1]),vector[0][1])"""
-            
-        #find point that would lie on both lines if they were infinite
-        if lineslope == "cringe":
-            if moveslope == "cringe":
-                #special contingency if both lines are vertical
-                if lineoffset == moveoffset:
-                    if line[0][1]>=vector[0][1] and line[0][1]<=vector[1][1]:
-                        return (lineoffset,line[0][1])
-                    elif line[1][1]>=vector[0][1] and line[1][1]<=vector[1][1]:
-                        return (lineoffset,line[0][1])
-                    else:
-                        return None
-                else:
-                    return None
-            else:
-                y = lineoffset*moveslope+moveoffset
-                point = (lineoffset,y)
-                #if point is actually in both lines:
-                if (point[1] <= line[0][1] and point[1] >= line[1][1]) or (point[1] >= line[0][1] and point[1] <= line[1][1]):
-                    if (point[1] <= vector[0][1] and point[1] >= vector[1][1]) or (point[1] >= vector[0][1] and point[1] <= vector[1][1]):
-                        if (point[0] <= line[0][0] and point[0] >= line[1][0]) or (point[0] >= line[0][0] and point[0] <= line[1][0]):
-                            if (point[0] <= vector[0][0] and point[0] >= vector[1][0]) or (point[0] >= vector[0][0] and point[0] <= vector[1][0]):
-                                #return that point
-                                return point
-                return None
-
-        else:
-            if moveslope == "cringe":
-                #special contingency for vertical moveslope
-                if moveoffset <= line[0][0] and moveoffset >= line [1][0] or moveoffset >= line[0][0] and moveoffset <= line [1][0]:
-                    y = moveoffset*lineslope+lineoffset
-                    if (y <= vector[0][1] and y >= vector[1][1]) or (y >= vector[0][1] and y <= vector[1][1]):
-                        return (moveoffset,y)
-                    else:
-                        return None
-                else:
-                    return None
-            else:
-                if moveslope == lineslope:
-                    #special contingency for two lines with the same slope
-                    if moveoffset == lineoffset:
-                        xtru,ytru = False,False
-                        if (line[0][1]>=vector[0][1] and line[0][1]>=vector[1][1])or(line[1][1]>=vector[0][1] and line[1][1]>=vector[1][1]):
-                            ytru = True
-                        if (line[0][0]>=vector[0][0] and line[0][0]>=vector[1][0])or(line[1][0]>=vector[0][0] and line[1][0]>=vector[1][0]):
-                            xtru = True
-                        if xtru and ytru:
-                            return (vector[1])
-                        else:
-                            return None
-                    else:
-                        return None
-                else:
-                    x = (lineoffset-moveoffset)/(moveslope-lineslope)
-                    #contingency plan for horizontal lines
-                    if lineslope == 0:
-                        y = line[0][1]
-                    else:
-                        y = moveslope*x+moveoffset
-                    point = (x,y)
-                    #pygame.draw.rect(state.display,(0,255,0), [point[0]-8,point[1]-8,16,16])
-                    #if point is actually in both lines:
-                    if (point[1] <= line[0][1] and point[1] >= line[1][1]) or (point[1] >= line[0][1] and point[1] <= line[1][1]):
-                        if (point[1] <= vector[0][1] and point[1] >= vector[1][1]) or (point[1] >= vector[0][1] and point[1] <= vector[1][1]):
-                            if (point[0] <= line[0][0] and point[0] >= line[1][0]) or (point[0] >= line[0][0] and point[0] <= line[1][0]):
-                                if (point[0] <= vector[0][0] and point[0] >= vector[1][0]) or (point[0] >= vector[0][0] and point[0] <= vector[1][0]):
-                                    #return that point
-                                    return point
-                    #by default, return nothing
-                    return None
-
     #calculate physics for the object
     def physics(self):
         #if not touching the ground, add gravity until terminal velocity is reached
@@ -302,13 +192,30 @@ class character(gameObject):
             
     #pretty self-explanitory: add the movement speed to the character        
     def move(self):
-        self.pos[1] += self.speed[1]*state.deltatime
-        self.pos[0] += self.speed[0]*state.deltatime
+        if self.movement[1] > state.movetickamount:
+            self.pos[1] += state.movetickamount
+            self.movement[1]-=state.movetickamount
+        elif -self.movement[1] > state.movetickamount:
+            self.pos[1] -= state.movetickamount
+            self.movement[1]+=state.movetickamount
+        else:
+            self.pos[1] += self.movement[1]
+            self.movement[1] = 0
+            
+        if self.movement[0] > state.movetickamount:
+            self.pos[0] += state.movetickamount
+            self.movement[0]-=state.movetickamount
+        elif -self.movement[0] > state.movetickamount:
+            self.pos[0] -= state.movetickamount
+            self.movement[0]+=state.movetickamount
+        else:
+            self.pos[0] += self.movement[0]
+            self.movement[0] = 0
+        
         self.pos = [round(self.pos[0]),round(self.pos[1])]
 
     #check for collisions on all four points. if a collision is found, find how far the point is into the ground and move it so that it is only 1px of less deep.  
     def collide(self):
-        self.vectorpointhandlecollide((self.lastbottom,self.bottom),1,-1)
         self.getpoints()
         #if the bottom point is blocked, the player is on the ground
         self.grounded = self.pointcollide([self.bottom[0],self.bottom[1]])
@@ -335,7 +242,6 @@ class character(gameObject):
                     break
 
         #if the top point is blocked, the character is bumping into a ceiling
-        self.vectorpointhandlecollide((self.lasttop,self.top),1,1)
         self.getpoints()
         self.topblock =  self.pointcollide(self.top)
         if self.topblock:
@@ -347,7 +253,6 @@ class character(gameObject):
                     break
                 dist += 1
         #if the left or right points are blocked, the character is pressing against a wall on that side
-        self.vectorpointhandlecollide((self.lastleft,self.left),0,1)
         self.getpoints()
         self.leftblock =  self.pointcollide(self.left)
         if self.leftblock:
@@ -359,7 +264,6 @@ class character(gameObject):
                     break
                 dist += 1
                 
-        self.vectorpointhandlecollide((self.lastright,self.right),0,-1)
         self.getpoints()
         self.rightblock =  self.pointcollide(self.right)
         if self.rightblock:
@@ -370,6 +274,16 @@ class character(gameObject):
                     self.getpoints()
                     break
                 dist += 1
+
+    def objcollide(self):
+        for thing in state.objects:
+            if type(thing).__name__ != "drawlayer" and thing != self:
+                if self.left[0]<=thing.left[0]<=self.right[0] or self.left[0]<=thing.right[0]<=self.right[0] or thing.left[0]<=self.left[0]<=thing.right[0] or thing.left[0]<=self.right[0]<=thing.right[0] or self.left[0]>=thing.left[0]>=self.right[0] or self.left[0]>=thing.right[0]>=self.right[0] or thing.left[0]>=self.left[0]>=thing.right[0] or thing.left[0]>=self.right[0]>=thing.right[0]:
+                    if self.top[1]<=thing.top[1]<=self.bottom[1] or self.top[1]<=thing.bottom[1]<=self.bottom[1] or thing.top[1]<=self.top[1]<=thing.bottom[1] or thing.top[1]<=self.bottom[1]<=thing.bottom[1] or self.top[1]>=thing.top[1]>=self.bottom[1] or self.top[1]>=thing.bottom[1]>=self.bottom[1] or thing.top[1]>=self.top[1]>=thing.bottom[1] or thing.top[1]>=self.bottom[1]>=thing.bottom[1]:
+                        thing.collidefunction(self)
+    
+    def collidefunction(self,trigger):
+        pass
                 
     #Draw the player sprite to the canvas in the correct position
     def render(self):
@@ -378,8 +292,112 @@ class character(gameObject):
             state.display.blit(self.sprite,[self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod])
         else:
             state.display.blit(pygame.transform.flip(self.sprite,True,False),[self.pos[0]-state.cam.pos[0],self.pos[1]-state.cam.pos[1]])
+
+class spawner(gameObject):
+    def __init__(self,locus,depth,parallax,name,extras):
+        super().__init__(locus,depth,parallax,extras)
+        self.data = state.objectsource[name]
+        self.size = self.data.get("Sizes")["Default"]
+        character.getpoints(self)
+        
+        self.delcond = self.data.get("DeleteCondition")
+        self.spawncond = self.data.get("SpawnCondition")
+        self.spawntype = self.data.get("Spawntype")
+        self.spawnees = self.data.get("Objlist")
+        self.spawnedobjs = []
+        
+    def update(self):
+        #super().update()
+        for item in self.spawnedobjs:
+            if item not in state.objects:
+                self.spawnedobjs.remove(item)
+        self.spawncheck()
+        self.deletecheck()
+
+    def collidefunction(self,trigger):
+        pass
+        
+    def deletecheck(self):
+        if self.delcond == "offcamera":
+            #if within camera x
+            if not(state.cam.pos[0]+state.screensize[0]>=self.pos[0]+self.size[0]>=state.cam.pos[0] or state.cam.pos[0]+state.screensize[0]>=self.pos[0]>=state.cam.pos[0]):
+                #if within camera y
+                if not(state.cam.pos[1]+state.screensize[1]>=self.pos[1]+self.size[1]>=state.cam.pos[1] or state.cam.pos[1]+state.screensize[1]>=self.pos[1]>=state.cam.pos[1]):
+                    for item in self.spawnedobjs:
+                        if item in state.objects:
+                            item.delete()
+                        
+    def spawncheck(self):
+        if self.spawncond == "entercamera":
+            #if within camera x
+            if state.cam.pos[0]+state.screensize[0]>=self.pos[0]+self.size[0]>=state.cam.pos[0] or state.cam.pos[0]+state.screensize[0]>=self.pos[0]>=state.cam.pos[0]:
+                #if within camera y
+                if state.cam.pos[1]+state.screensize[1]>=self.pos[1]+self.size[1]>=state.cam.pos[1] or state.cam.pos[1]+state.screensize[1]>=self.pos[1]>=state.cam.pos[1]:
+                    #if not within x last frame
+                    if not (state.cam.lastpos[0]+state.screensize[0]>=self.pos[0]+self.size[0]>=state.cam.lastpos[0] or state.cam.lastpos[0]+state.screensize[0]>=self.pos[0]>=state.cam.lastpos[0]) or  not (state.cam.lastpos[1]+state.screensize[1]>=self.pos[1]+self.size[1]>=state.cam.lastpos[1] or state.cam.lastpos[1]+state.screensize[1]>=self.pos[1]>=state.cam.lastpos[1]):
+                        #if not within y last frame
+                            #spawn things
+                            self.spawn()
+    def spawn(self):
+        if self.spawntype == "random":
+            index = random.randint(0,len(self.spawnees)-1)
+            for item in self.spawnees[index]:
+                if item[3] == "parent":
+                    item[3] = self.depth
+                if item[4] == "parent":
+                    item[4] = self.parallax
+                self.spawnedobjs.append(globals()[item[0]]([item[2][0]+self.pos[0],item[2][1]+self.pos[1]],item[3],item[4],item[1],item[5]))
+
+class Sign(character):
+    def __init__(self,locus,depth,parallax,name,extras):
+        super().__init__(locus,depth,parallax,name,extras)
+        self.data = state.objectsource[name]
+        self.text = extras[0]
+        self.sprite.fill((100,100,0))
+    def update(self):
+        super().update()
+        self.sprite.blit(state.writer.render(self.text,False,(255,255,0)),(0,0))
+    
+        
+class Platform(character):
+    def __init__(self,locus,depth,parallax,name,extras):
+        super().__init__(locus,depth,parallax,name,extras)
+        self.gravity = 0
+        self.sprite.fill((100,0,0))
+        pygame.draw.rect(self.sprite,(255,0,0),(0,0,self.size[0],20))
+
+    def collide(self):
+        pass
+        
+    def collidefunction(self,trigger):
+        if trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0:
+            trigger.grounded = True
+            trigger.speed[1] = 0
+            trigger.movement[1] = 0
+            trigger.pos[1] = self.top[1] - trigger.size[1]
+
+class CollapsingPlatform(Platform):
+    def __init__(self,locus,depth,parallax,name,extras):
+        super().__init__(locus,depth,parallax,name,extras)
+        self.collapsing = False
+        
+    def collidefunction(self,trigger):
+        if trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0 and self.collapsing == False and type(trigger) == Player:
+            self.sprite.fill((0,0,100))
+            pygame.draw.rect(self.sprite,(0,0,255),(0,0,self.size[0],20))
+            trigger.grounded = True
+            trigger.speed[1] = 0
+            trigger.movement[1] = 0
+            trigger.pos[1] = self.top[1] - trigger.size[1]
+            self.actionqueue.append([30,["collapsestart",None],["self","collapsing",True]])
+            self.actionqueue.append([60,["delete",None],[None,None,True]])
+            
         
 class Player(character):
+    def __init__(self,locus,depth,parallax,name,extras):
+        super().__init__(locus,depth,parallax,name,extras)
+        self.sprite.fill((255,0,0))
+        pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
     #this update is the same as the one for generic characters, but it allows the player to control it.
     def update(self):
         if state.gamemode != "edit":
@@ -387,9 +405,14 @@ class Player(character):
             self.playerControl()
             self.actionupdate()
             #print(self.speed)
-            self.move()
+            self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
+            while self.movement != [0,0]:
+                self.move()
+                self.collide()
+                self.objcollide()
             self.collide()
-            #state.cam.focus = self.pos#(4250,3120)
+            self.objcollide()
+            state.cam.focus = self.pos#(4250,3120)
         self.render()
         self.lastpos = self.pos.copy()
         self.lastbottom = self.bottom.copy()
@@ -416,5 +439,5 @@ class Player(character):
                 self.direction = 1
             moves.walk(self,20)
         if pygame.K_h in state.newkeys:
-            self.actionqueue.append([60,["jump",150],["keys",pygame.K_h,True]])
+            self.actionqueue.append([60,["jump",150],["keys",pygame.K_h,False]])
             
