@@ -463,11 +463,15 @@ class Projectile(gameObject):
         def accelerate():
             self.speed = (self.speed[0] + acceleration, self.speed[1] + acceleration)
 
-        def hit(target):
-            # Dummy function for hitting something
-            # if(tile):
-            #    do Tile Animation
-            # elif(target != self.allegiance):
-            #     target.health -= self.damage
+        def checkCollision():
+            for object in state.objects:
+                if object.collidepoint(self.pos):
+                    hit(object)
 
+        def hit(target):
+            if isinstance(target, character) and target != self.allegiance:
+                target.health -= self.damage
+            else:
+                # do Tile Animation
+                foo = 1
             self.delete()
