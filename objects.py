@@ -1,8 +1,8 @@
 """
 Filename: objects.py
 Author(s): Talieisn Reese
-Version: 1.3
-Date: 10/9/2024
+Version: 1.4
+Date: 10/13/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
@@ -16,6 +16,7 @@ from functools import partial
 #basic class to build other objects onto
 class gameObject:
     def __init__(self, locus, depth, parallax, extras):
+        self.children = []
         self.pos = locus
         self.lastpos = locus
         self.depth = depth
@@ -36,10 +37,12 @@ class gameObject:
 class character(gameObject):
     def __init__(self,locus,depth,parallax,name,extras):
         super().__init__(locus,depth,parallax,extras)
+        #extra data used for individual object types
+        self.data = state.objectsource[name]
         #extra variables handle things unique to objects with more logic: movement, gravity, grounded state, etc.
-        self.speed = [0,0]
         self.movement = [0,0]
         self.direction = 1
+        self.lastdirection = 1
         self.maxfall = 50
         self.maxspeed = 20
         self.gravity = 10
@@ -60,13 +63,26 @@ class character(gameObject):
         self.yhighestpoint = self.collidepoints[0]
         #the action queue is used to hold the current action.
         self.actionqueue = []
-        #a dictionary of hurtboxes that this object can spawn--a dictionary is used so that we can activate and deactivate them by name. Will likely be used more for enemies than for MathWiz himself
-        self.hurtboxes = {}
+        #a dictionary of hitboxes that this object can spawn--a dictionary is used so that we can activate and deactivate them by name. Will likely be used more for enemies than for MathWiz himself
+        hitboxsource = self.data["Hitboxes"]
+        self.hitboxes = {}
+        for item in hitboxsource.keys():
+            extra = hitboxsource[item][1]
+            extra.append(self)
+            created = Hitbox(hitboxsource[item][0],self.depth,self.parallax,extra)
+            self.children.append(created)
+            self.hitboxes[item] = created
         #sprite used to show player. Replace these calls with animation frame draws
         self.sprite = pygame.Surface(self.size)
 
     #run every frame to update the character's logic    
     def update(self):
+        self.lastpos = self.pos.copy()
+        self.lastbottom = self.bottom.copy()
+        self.lasttop = self.top.copy()
+        self.lastleft = self.left.copy()
+        self.lastright = self.right.copy()
+        self.lastdir = self.direction
         self.actionupdate()
         self.physics()
         self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
@@ -76,12 +92,10 @@ class character(gameObject):
             self.objcollide()
         self.objcollide()
         self.collide()
+        for item in self.children:
+            item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
+            item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
         self.render()
-        self.lastpos = self.pos.copy()
-        self.lastbottom = self.bottom.copy()
-        self.lasttop = self.top.copy()
-        self.lastleft = self.left.copy()
-        self.lastright = self.right.copy()
 
     def actionupdate(self):
         #iterate through every action in the queue.
@@ -107,7 +121,6 @@ class character(gameObject):
                     case _:
                         self.actionqueue.remove(action)
             
-        
     #calcualte the points to use in collision detection
     def getpoints(self):
         self.left = [self.pos[0],int(self.pos[1]+self.size[1]/2)]
@@ -284,6 +297,9 @@ class character(gameObject):
     
     def collidefunction(self,trigger):
         pass
+
+    def damagetake(self,dmg):
+        pass
                 
     #Draw the player sprite to the canvas in the correct position
     def render(self):
@@ -305,6 +321,10 @@ class spawner(gameObject):
         self.spawntype = self.data.get("Spawntype")
         self.spawnees = self.data.get("Objlist")
         self.spawnedobjs = []
+
+    def render(self):
+        parallaxmod = self.parallax - state.cam.depth
+        pygame.draw.rect(state.display,(255,255,0),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,20,20))
         
     def update(self):
         #super().update()
@@ -351,7 +371,6 @@ class spawner(gameObject):
 class Sign(character):
     def __init__(self,locus,depth,parallax,name,extras):
         super().__init__(locus,depth,parallax,name,extras)
-        self.data = state.objectsource[name]
         self.text = extras[0]
         self.sprite.fill((100,100,0))
     def update(self):
@@ -392,7 +411,38 @@ class CollapsingPlatform(Platform):
             self.actionqueue.append([30,["collapsestart",None],["self","collapsing",True]])
             self.actionqueue.append([60,["delete",None],[None,None,True]])
             
-        
+class Hitbox(gameObject):
+    def __init__(self,locus,depth,parallax,extras):
+        super().__init__([extras[3].pos[0]+locus[0],extras[3].pos[1]+locus[1]],depth,parallax,extras)
+        self.parent = extras[3]
+        self.offset = locus
+        self.size = extras[0]
+        self.mode = extras[1]
+        self.amt = extras[2]
+        self.active = False
+        self.getpoints()
+    #calcualte the points to use in collision detection
+    def getpoints(self):
+        self.left = [self.pos[0],int(self.pos[1]+self.size[1]/2)]
+        self.right = [self.pos[0]+self.size[0],int(self.pos[1]+self.size[1]/2)]
+        self.top = [int(self.pos[0]+self.size[0]/2),self.pos[1]]
+        self.bottom = [int(self.pos[0]+self.size[0]/2),self.pos[1]+self.size[1]]
+    def update(self):
+        parallaxmod = self.parallax - state.cam.depth
+        if self.parent.lastdir != self.parent.direction:
+            print(self.offset)
+            if self.parent.direction == 1:
+                self.pos[0] += 2*self.offset[0]
+            elif self.parent.direction == -1:
+                self.pos[0] -= 2*self.offset[0]
+        self.getpoints()
+        if self.active:
+            pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
+    def collidefunction(self,trigger):
+        if self.active:
+            if self.mode == "dmg" and trigger == self.parent:
+                trigger.damagetake(self.amt)
+    
 class Player(character):
     def __init__(self,locus,depth,parallax,name,extras):
         super().__init__(locus,depth,parallax,name,extras)
@@ -401,6 +451,12 @@ class Player(character):
     #this update is the same as the one for generic characters, but it allows the player to control it.
     def update(self):
         if state.gamemode != "edit":
+            self.lastpos = self.pos.copy()
+            self.lastbottom = self.bottom.copy()
+            self.lasttop = self.top.copy()
+            self.lastleft = self.left.copy()
+            self.lastright = self.right.copy()
+            self.lastdir = self.direction
             self.physics()
             self.playerControl()
             self.actionupdate()
@@ -413,12 +469,10 @@ class Player(character):
             self.collide()
             self.objcollide()
             state.cam.focus = self.pos#(4250,3120)
+        for item in self.children:
+            item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
+            item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
         self.render()
-        self.lastpos = self.pos.copy()
-        self.lastbottom = self.bottom.copy()
-        self.lasttop = self.top.copy()
-        self.lastleft = self.left.copy()
-        self.lastright = self.right.copy()
 
     #perform moves from the moves library based on the status of input
     def playerControl(self):
@@ -440,4 +494,10 @@ class Player(character):
             moves.walk(self,20)
         if pygame.K_h in state.newkeys:
             self.actionqueue.append([60,["jump",150],["keys",pygame.K_h,False]])
+        if pygame.K_p in state.newkeys:
+            self.actionqueue.append([5,["hitboxon","testpunch"],[None,None,True]])
+            self.actionqueue.append([65,["hitboxoff","testpunch"],[None,None,True]])
+
+    def damagetake(self,dmg):
+        print(f"{dmg} damage-man, that really would've hurt if pain had been invented!")
             

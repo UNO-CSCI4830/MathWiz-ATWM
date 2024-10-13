@@ -6,6 +6,9 @@
         "Pallates":{},
         "Sizes":{
             "Default":[240,240]
+        },
+        "Hitboxes":{
+            "testpunch":[[120,0],[[240,240],"dmg",10]]
         }
     },
     "ExponentPlatform":{
@@ -15,7 +18,8 @@
         "Pallates":{},
         "Sizes":{
             "Default":[480,480]
-        }
+        },
+        "Hitboxes":{}
     },
     "ExponentWrongPlatform":{
         "Type":"CollapsingPlatform",
@@ -24,7 +28,8 @@
         "Pallates":{},
         "Sizes":{
             "Default":[480,480]
-        }
+        },
+        "Hitboxes":{}
     },
     "ExponenetSign":{
         "Type":"Sign",
@@ -33,7 +38,8 @@
         "Pallates":{},
         "Sizes":{
             "Default":[240,240]
-        }
+        },
+        "Hitboxes":{}
     },
     "ExponentQuestionSpawner":{
         "Type":"spawner",
