@@ -44,4 +44,5 @@ def hitboxon(caller,hitboxname):
     
 def hitboxoff(caller,hitboxname):
     caller.hitboxes[hitboxname].active = False
+    caller.hitboxes[hitboxname].hitobjects = []
     

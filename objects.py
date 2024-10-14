@@ -304,7 +304,7 @@ class character(gameObject):
     #Draw the player sprite to the canvas in the correct position
     def render(self):
         parallaxmod = self.parallax - state.cam.depth
-        if True:#self.direction == 1:
+        if self.direction == 1:
             state.display.blit(self.sprite,[self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod])
         else:
             state.display.blit(pygame.transform.flip(self.sprite,True,False),[self.pos[0]-state.cam.pos[0],self.pos[1]-state.cam.pos[1]])
@@ -415,6 +415,7 @@ class Hitbox(gameObject):
     def __init__(self,locus,depth,parallax,extras):
         super().__init__([extras[3].pos[0]+locus[0],extras[3].pos[1]+locus[1]],depth,parallax,extras)
         self.parent = extras[3]
+        self.hitobjects = []
         self.offset = locus
         self.size = extras[0]
         self.mode = extras[1]
@@ -430,7 +431,6 @@ class Hitbox(gameObject):
     def update(self):
         parallaxmod = self.parallax - state.cam.depth
         if self.parent.lastdir != self.parent.direction:
-            print(self.offset)
             if self.parent.direction == 1:
                 self.pos[0] += 2*self.offset[0]
             elif self.parent.direction == -1:
@@ -439,9 +439,10 @@ class Hitbox(gameObject):
         if self.active:
             pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
     def collidefunction(self,trigger):
-        if self.active:
-            if self.mode == "dmg" and trigger == self.parent:
+        if self.active and trigger != self.parent and trigger not in self.hitobjects:
+            if self.mode == "dmg":
                 trigger.damagetake(self.amt)
+            self.hitobjects.append(trigger)
     
 class Player(character):
     def __init__(self,locus,depth,parallax,name,extras):
