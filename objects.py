@@ -1,8 +1,8 @@
 """
 Filename: objects.py
 Author(s): Talieisn Reese
-Version: 1.4
-Date: 10/13/2024
+Version: 1.5
+Date: 10/14/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
@@ -50,6 +50,13 @@ class character(gameObject):
         self.actiontimer = 0
         self.name = name
         self.size = state.objectsource[name]["Sizes"]["Default"]
+        #sprite used to show player. Replace these calls with animation frame draws
+        self.sprite = pygame.Surface(self.size)
+        self.sprite.set_colorkey(state.invis)
+        #stuff for animation
+        self.animname = "Idle"
+        self.animframe = 0
+        self.animtime = 0
         #determine points for collision
         self.getpoints()
         self.lastbottom = self.bottom.copy()
@@ -72,11 +79,10 @@ class character(gameObject):
             created = Hitbox(hitboxsource[item][0],self.depth,self.parallax,extra)
             self.children.append(created)
             self.hitboxes[item] = created
-        #sprite used to show player. Replace these calls with animation frame draws
-        self.sprite = pygame.Surface(self.size)
 
     #run every frame to update the character's logic    
     def update(self):
+        self.lastanim = self.animname
         self.lastpos = self.pos.copy()
         self.lastbottom = self.bottom.copy()
         self.lasttop = self.top.copy()
@@ -120,6 +126,27 @@ class character(gameObject):
                     #remove the action immediately if the source isn't found
                     case _:
                         self.actionqueue.remove(action)
+                        
+    def animationpick(self):
+        #OVERRIDE: If specially requested, play that animation until completion.
+        #if nonxero speed on x-axis and grounded, return the walking animation
+        #if not grounded and going up, retun jumping animation
+        #if notgrounded and falling down, return falling animation
+        #by default, return the idle animation
+        pass
+        
+    def animationupdate(self):
+        self.sprite.fill(state.invis)
+        self.animtime += state.deltatime
+        anim = self.data["Animations"][self.animname]
+        if self.animtime >= anim[self.animframe][3]:
+            self.animframe += 1
+            self.animtime = 0
+            if self.animframe >= len(anim):
+                self.animframe = 0
+        self.sprite.blit(state.spritesheet, self.data["Frames"][anim[self.animframe][0]][4:],(self.data["Frames"][anim[self.animframe][0]][:4]))
+        self.sprite = pygame.transform.rotate(pygame.transform.flip(self.sprite,anim[self.animframe][1][0],anim[self.animframe][1][1]),anim[self.animframe][2])
+        
             
     #calcualte the points to use in collision detection
     def getpoints(self):
@@ -447,8 +474,8 @@ class Hitbox(gameObject):
 class Player(character):
     def __init__(self,locus,depth,parallax,name,extras):
         super().__init__(locus,depth,parallax,name,extras)
-        self.sprite.fill((255,0,0))
-        pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
+        #self.sprite.fill((255,0,0))
+        #pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
     #this update is the same as the one for generic characters, but it allows the player to control it.
     def update(self):
         if state.gamemode != "edit":
@@ -473,6 +500,7 @@ class Player(character):
         for item in self.children:
             item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
             item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
+        self.animationupdate()
         self.render()
 
     #perform moves from the moves library based on the status of input

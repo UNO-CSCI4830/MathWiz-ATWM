@@ -1,8 +1,8 @@
 """
 Filename: main.py
 Author(s): Taliesin Reese
-Verion: 1.2
-Date: 10/9/2024
+Verion: 1.3
+Date: 10/14/2024
 Purpose: Core file for "MathWiz!"
 """
 #premade library imports
@@ -38,6 +38,7 @@ state.adjustdeltatime = True
 state.writer = pygame.font.SysFont("Arial",150)
 state.tilesource = json.load(open("tiles.json"))
 state.tilesheet = pygame.image.load("Assets/images/tiles.png").convert()
+state.spritesheet = pygame.image.load("Assets/images/CharSprites.png").convert()
 state.objectsource = json.load(open("objects.json"))
 state.objects = []
 state.fpsTarget = 60
@@ -76,7 +77,7 @@ while True:
         state.deltatime = state.fpsTarget*clock.get_time()/(1000)
     #print(state.deltatime)
     #reset display
-    state.display.fill((0,0,0))
+    state.display.fill((0,0,255))
     #update world
     state.cam.update()
     for thing in state.objects:

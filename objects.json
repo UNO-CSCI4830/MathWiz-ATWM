@@ -1,8 +1,12 @@
 {
     "MathWiz":{
         "Type":"player",
-        "Frames":{},
-        "Animations":{},
+        "Frames":{
+            "Idle1":[0,0,240,240,0,0]
+        },
+        "Animations":{
+            "Idle":[["Idle1",[0,0],0,60]]
+        },
         "Pallates":{},
         "Sizes":{
             "Default":[240,240]
