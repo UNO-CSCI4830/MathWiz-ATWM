@@ -1,8 +1,8 @@
 """
 Filename: main.py
 Author(s): Taliesin Reese
-Verion: 1.3
-Date: 10/14/2024
+Verion: 1.5
+Date: 10/16/2024
 Purpose: Core file for "MathWiz!"
 """
 #premade library imports
@@ -20,9 +20,11 @@ import menufuncs
 pygame.init()
 #the tilesize is a lynchpin. All measures in the game save for the final render size are based on the tile (or, they will be in the final product. Not all of them are right now)
 state.tilesize = 120
+#size to actually display stuff
+state.displaysize = 800
 #anyway set up pygame stuff
 state.screensize = (state.tilesize*30,state.tilesize*30)
-state.window = pygame.display.set_mode((800,800))
+state.window = pygame.display.set_mode((state.displaysize,state.displaysize))
 state.display = pygame.Surface(state.screensize)
 state.font = pygame.font.SysFont("Lucida Console",100)
 
@@ -84,6 +86,6 @@ while True:
         thing.update()
 
     #display
-    state.window.blit(pygame.transform.scale(state.display,(800,800)),(0,0))
+    state.window.blit(pygame.transform.scale(state.display,(state.displaysize,state.displaysize)),(0,0))
     pygame.display.flip()
     clock.tick()

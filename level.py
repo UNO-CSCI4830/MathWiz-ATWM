@@ -1,8 +1,8 @@
 """
 Filename: level.py
 Author(s): Taliesin Reese
-Verion: 1.7
-Date: 10/14/2024
+Verion: 1.8
+Date: 10/15/2024
 Purpose: Level class and functions for "MathWiz!"
 """
 import pygame
@@ -18,6 +18,7 @@ class level:
         self.datafile = json.load(open(f"Leveldata/{name}.json"))
         self.depths = self.datafile["layerdepths"]
         self.parallaxes = self.datafile["layerparallaxes"]
+        self.loops = self.datafile["layerloops"]
         self.tilemap = self.datafile["tiles"]
         self.flipmap = self.datafile["flips"]
         self.spinmap = self.datafile["rotates"]
@@ -68,7 +69,7 @@ class drawlayer:
         if state.gamemode == "edit":
             self.loop = False
         else:
-            self.loop = True
+            self.loop = self.level.loops[self.layernum]
         #the depth will be useful to add parallax scrolling
         self.depth = self.level.depths[layernum]
         self.parallax = self.level.parallaxes[layernum]
