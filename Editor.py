@@ -1,8 +1,8 @@
 """
 Filename: Editor.py
 Author(s): Taliesin Reese
-Version: 1.7
-Date: 10/09/2024
+Version: 1.8
+Date: 10/14/2024
 Purpose: Level Editor for MathWiz!
 """
 
@@ -30,6 +30,7 @@ state.tilesheet = pygame.image.load("Assets/images/tiles.png").convert()
 state.display = pygame.Surface(state.screensize)
 state.objectsource = json.load(open("objects.json"))
 state.objects = []
+state.deltatime = 1
 state.cam = Cam.cam()
 
 state.gamemode = "edit"
