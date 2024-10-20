@@ -465,7 +465,11 @@ def spindrawupdate():
             print("Cannot spin, Out of Bounds")
 
 def rowaddupdate():
-    rows = int(state.addamt.get())
+    try:
+        rows = int(state.addamt.get())
+    except ValueError:
+        print("Invalid value")
+        rows = 1
     tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     #print(tile)
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
@@ -475,7 +479,11 @@ def rowaddupdate():
         state.levelchanged = True
 
 def coladdupdate():
-    cols = int(state.addamt.get())
+    try:
+        cols = int(state.addamt.get())
+    except ValueError:
+        print("Invalid value")
+        cols = 1
     tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     #print(tile)
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
@@ -493,7 +501,7 @@ def addheight(target, rowstoadd):
     #add rows at length of longest row at the point listed
     add = []
     for zero in range(longest):
-        add.append(1)
+        add.append(0)
     for row in range(rowstoadd):
         state.level.tilemap[state.renderlayer].insert(target[1],add.copy())
         state.level.pallatemap[state.renderlayer].insert(target[1],add.copy())
@@ -507,10 +515,10 @@ def addwidth(target, colstoadd):
     #add values into all the rows
     for row in range(len(state.level.tilemap[state.renderlayer])):
         for iteration in range(colstoadd):
-            state.level.tilemap[state.renderlayer][row].insert(target[0],1)
-            state.level.pallatemap[state.renderlayer][row].insert(target[0],1)
-            state.level.spinmap[state.renderlayer][row].insert(target[0],1)
-            state.level.flipmap[state.renderlayer][row].insert(target[0],1)
+            state.level.tilemap[state.renderlayer][row].insert(target[0],0)
+            state.level.pallatemap[state.renderlayer][row].insert(target[0],0)
+            state.level.spinmap[state.renderlayer][row].insert(target[0],0)
+            state.level.flipmap[state.renderlayer][row].insert(target[0],0)
     for object in state.objects:
         if type(object)==level.drawlayer and object.layernum == state.renderlayer:
             object.calcsize()

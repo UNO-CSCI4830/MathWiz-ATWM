@@ -1,8 +1,8 @@
 """
 Filename: moves.py
 Author(s): Taliesin Reese
-Version: 1.2
-Date: 10/9/2024
+Version: 1.3
+Date: 10/13/2024
 Purpose: moves to be used in "MathWiz!"
 """
 import GameData as state
@@ -38,3 +38,10 @@ def collapsestart(caller,Nix):
     
 def delete(caller,burner):
     caller.delete()
+
+def hitboxon(caller,hitboxname):
+    caller.hitboxes[hitboxname].active = True
+    
+def hitboxoff(caller,hitboxname):
+    caller.hitboxes[hitboxname].active = False
+    
