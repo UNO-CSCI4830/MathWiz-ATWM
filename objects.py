@@ -1,8 +1,13 @@
 """
 Filename: objects.py
 Author(s): Talieisn Reese
+<<<<<<< HEAD
 Version: 1.4
 Date: 10/13/2024
+=======
+Version: 1.8
+Date: 10/16/2024
+>>>>>>> main
 Purpose: object classes for "MathWiz!"
 """
 import pygame
@@ -50,6 +55,16 @@ class character(gameObject):
         self.actiontimer = 0
         self.name = name
         self.size = state.objectsource[name]["Sizes"]["Default"]
+        #sprite used to show player. Replace these calls with animation frame draws
+        self.sprite = pygame.Surface(self.size)
+        self.colorbrush = pygame.Surface(self.size)
+        self.sprite.set_colorkey(state.invis)
+        self.pallate = "Default"
+        #stuff for animation
+        self.animname = "Idle"
+        self.lastanim = "Idle"
+        self.animframe = 0
+        self.animtime = 0
         #determine points for collision
         self.getpoints()
         self.lastbottom = self.bottom.copy()
@@ -72,11 +87,10 @@ class character(gameObject):
             created = Hitbox(hitboxsource[item][0],self.depth,self.parallax,extra)
             self.children.append(created)
             self.hitboxes[item] = created
-        #sprite used to show player. Replace these calls with animation frame draws
-        self.sprite = pygame.Surface(self.size)
 
     #run every frame to update the character's logic    
     def update(self):
+        self.lastanim = self.animname
         self.lastpos = self.pos.copy()
         self.lastbottom = self.bottom.copy()
         self.lasttop = self.top.copy()
@@ -120,6 +134,49 @@ class character(gameObject):
                     #remove the action immediately if the source isn't found
                     case _:
                         self.actionqueue.remove(action)
+                        
+    def animationpick(self):
+        #OVERRIDE: If specially requested, play that animation until completion.
+        #if nonxero speed on x-axis and grounded, return the walking animation
+        if self.grounded:
+            if abs(self.speed[0]) > 0:
+                self.animname = "Walk"
+            #by default, return the idle animation
+            else:
+                self.animname = "Idle"
+        #if not grounded and going up, retun jumping animation
+        elif self.grounded == False:
+            #if notgrounded and falling down, return falling animation
+            if self.speed[1] >= 0:
+                self.animname = "Fall"
+            else:
+                self.animname = "Jump"
+        if self.animname != self.lastanim:
+            self.animtime = 0
+            self.animframe = 0
+        
+    def animationupdate(self):
+        self.sprite.fill(state.invis)
+        self.animtime += state.deltatime
+        anim = self.data["Animations"][self.animname]
+        if self.animtime >= anim[self.animframe][3]:
+            self.animframe += 1
+            self.animtime = 0
+            if self.animframe >= len(anim):
+                self.animframe = 0
+        #draw the sprite
+        self.sprite.blit(state.spritesheet, self.data["Frames"][anim[self.animframe][0]][4:],(self.data["Frames"][anim[self.animframe][0]][:4]))
+        self.sprite = pygame.transform.rotate(pygame.transform.flip(self.sprite,anim[self.animframe][1][0],anim[self.animframe][1][1]),anim[self.animframe][2])
+        
+        #get the sprite drawn with the correct palatte
+        #optimize this later
+        if self.pallate != "Default":
+            for color in range(len(state.objectsource[self.name]["Pallates"][self.pallate])):
+                self.colorbrush.fill(state.objectsource[self.name]["Pallates"][self.pallate][color])
+                self.sprite.set_colorkey(state.objectsource[self.name]["Pallates"]["Default"][color])
+                self.colorbrush.blit(self.sprite,(0,0))
+                self.sprite.blit(self.colorbrush,(0,0))
+            self.sprite.set_colorkey(state.invis)
             
     #calcualte the points to use in collision detection
     def getpoints(self):
@@ -198,33 +255,40 @@ class character(gameObject):
         #decrease move speed    
         if self.speed[0] > 0:
             self.speed[0] -= 4*state.deltatime
+            if (self.speed[0]) < 1:
+                self.speed[0] = 0
         elif self.speed[0] < 0:
             self.speed[0] += 4*state.deltatime
-        if abs(self.speed[0] < 1):
-            self.speed[0] = 0
+            if (self.speed[0]) > -1:
+                self.speed[0] = 0
             
     #pretty self-explanitory: add the movement speed to the character        
     def move(self):
-        if self.movement[1] > state.movetickamount:
-            self.pos[1] += state.movetickamount
-            self.movement[1]-=state.movetickamount
-        elif -self.movement[1] > state.movetickamount:
-            self.pos[1] -= state.movetickamount
-            self.movement[1]+=state.movetickamount
+        if abs(self.movement[1]) > state.movetickamount:
+            if self.movement[1] > 0:
+                self.pos[1] += state.movetickamount
+                self.movement[1]-=state.movetickamount
+            elif self.movement[1] < 0:
+                self.pos[1] -= state.movetickamount
+                self.movement[1]+=state.movetickamount
+            if abs(self.movement[1]) < 1:
+                self.movement[1] = 0
         else:
             self.pos[1] += self.movement[1]
             self.movement[1] = 0
-            
-        if self.movement[0] > state.movetickamount:
-            self.pos[0] += state.movetickamount
-            self.movement[0]-=state.movetickamount
-        elif -self.movement[0] > state.movetickamount:
-            self.pos[0] -= state.movetickamount
-            self.movement[0]+=state.movetickamount
+
+        if abs(self.movement[0]) > state.movetickamount:
+            if self.movement[0] > 0:
+                self.pos[0] += state.movetickamount
+                self.movement[0]-=state.movetickamount
+            elif self.movement[0] < 0:
+                self.pos[0] -= state.movetickamount
+                self.movement[0]+=state.movetickamount
+            if abs(self.movement[0]) < 1:
+                self.movement[0] = 0
         else:
             self.pos[0] += self.movement[0]
             self.movement[0] = 0
-        
         self.pos = [round(self.pos[0]),round(self.pos[1])]
 
     #check for collisions on all four points. if a collision is found, find how far the point is into the ground and move it so that it is only 1px of less deep.  
@@ -304,7 +368,7 @@ class character(gameObject):
     #Draw the player sprite to the canvas in the correct position
     def render(self):
         parallaxmod = self.parallax - state.cam.depth
-        if True:#self.direction == 1:
+        if self.direction == 1:
             state.display.blit(self.sprite,[self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod])
         else:
             state.display.blit(pygame.transform.flip(self.sprite,True,False),[self.pos[0]-state.cam.pos[0],self.pos[1]-state.cam.pos[1]])
@@ -415,6 +479,7 @@ class Hitbox(gameObject):
     def __init__(self,locus,depth,parallax,extras):
         super().__init__([extras[3].pos[0]+locus[0],extras[3].pos[1]+locus[1]],depth,parallax,extras)
         self.parent = extras[3]
+        self.hitobjects = []
         self.offset = locus
         self.size = extras[0]
         self.mode = extras[1]
@@ -428,29 +493,32 @@ class Hitbox(gameObject):
         self.top = [int(self.pos[0]+self.size[0]/2),self.pos[1]]
         self.bottom = [int(self.pos[0]+self.size[0]/2),self.pos[1]+self.size[1]]
     def update(self):
-        parallaxmod = self.parallax - state.cam.depth
         if self.parent.lastdir != self.parent.direction:
-            print(self.offset)
             if self.parent.direction == 1:
                 self.pos[0] += 2*self.offset[0]
             elif self.parent.direction == -1:
                 self.pos[0] -= 2*self.offset[0]
         self.getpoints()
         if self.active:
-            pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
+            self.render()
+    def render(self):
+        parallaxmod = self.parallax - state.cam.depth
+        pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
     def collidefunction(self,trigger):
-        if self.active:
-            if self.mode == "dmg" and trigger == self.parent:
+        if self.active and trigger != self.parent and trigger not in self.hitobjects:
+            if self.mode == "dmg":
                 trigger.damagetake(self.amt)
+            self.hitobjects.append(trigger)
     
 class Player(character):
     def __init__(self,locus,depth,parallax,name,extras):
         super().__init__(locus,depth,parallax,name,extras)
-        self.sprite.fill((255,0,0))
-        pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
+        #self.sprite.fill((255,0,0))
+        #pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
     #this update is the same as the one for generic characters, but it allows the player to control it.
     def update(self):
         if state.gamemode != "edit":
+            self.lastanim = self.animname
             self.lastpos = self.pos.copy()
             self.lastbottom = self.bottom.copy()
             self.lasttop = self.top.copy()
@@ -468,10 +536,12 @@ class Player(character):
                 self.objcollide()
             self.collide()
             self.objcollide()
-            state.cam.focus = self.pos#(4250,3120)
+            #state.cam.focus = self.pos#(4250,3120)
         for item in self.children:
             item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
             item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
+        self.animationpick()
+        self.animationupdate()
         self.render()
 
     #perform moves from the moves library based on the status of input
