@@ -1,8 +1,8 @@
 """
 Filename: objects.py
 Author(s): Talieisn Reese
-Version: 1.8
-Date: 10/16/2024
+Version: 1.9
+Date: 10/21/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
@@ -17,6 +17,7 @@ from functools import partial
 class gameObject:
     def __init__(self, locus, depth, parallax, extras):
         self.children = []
+        self.extras = extras
         self.pos = locus
         self.lastpos = locus
         self.depth = depth
@@ -60,6 +61,8 @@ class character(gameObject):
         self.lastanim = "Idle"
         self.animframe = 0
         self.animtime = 0
+        if state.gamemode == "edit":
+            self.animationupdate()
         #determine points for collision
         self.getpoints()
         self.lastbottom = self.bottom.copy()
@@ -154,24 +157,25 @@ class character(gameObject):
         self.sprite.fill(state.invis)
         self.animtime += state.deltatime
         anim = self.data["Animations"][self.animname]
-        if self.animtime >= anim[self.animframe][3]:
-            self.animframe += 1
-            self.animtime = 0
-            if self.animframe >= len(anim):
-                self.animframe = 0
-        #draw the sprite
-        self.sprite.blit(state.spritesheet, self.data["Frames"][anim[self.animframe][0]][4:],(self.data["Frames"][anim[self.animframe][0]][:4]))
-        self.sprite = pygame.transform.rotate(pygame.transform.flip(self.sprite,anim[self.animframe][1][0],anim[self.animframe][1][1]),anim[self.animframe][2])
-        
-        #get the sprite drawn with the correct palatte
-        #optimize this later
-        if self.pallate != "Default":
-            for color in range(len(state.objectsource[self.name]["Pallates"][self.pallate])):
-                self.colorbrush.fill(state.objectsource[self.name]["Pallates"][self.pallate][color])
-                self.sprite.set_colorkey(state.objectsource[self.name]["Pallates"]["Default"][color])
-                self.colorbrush.blit(self.sprite,(0,0))
-                self.sprite.blit(self.colorbrush,(0,0))
-            self.sprite.set_colorkey(state.invis)
+        if anim != []:
+            if self.animtime >= anim[self.animframe][3]:
+                self.animframe += 1
+                self.animtime = 0
+                if self.animframe >= len(anim):
+                    self.animframe = 0
+            #draw the sprite
+            self.sprite.blit(state.spritesheet, self.data["Frames"][anim[self.animframe][0]][4:],(self.data["Frames"][anim[self.animframe][0]][:4]))
+            self.sprite = pygame.transform.rotate(pygame.transform.flip(self.sprite,anim[self.animframe][1][0],anim[self.animframe][1][1]),anim[self.animframe][2])
+            
+            #get the sprite drawn with the correct palatte
+            #optimize this later
+            if self.pallate != "Default":
+                for color in range(len(state.objectsource[self.name]["Pallates"][self.pallate])):
+                    self.colorbrush.fill(state.objectsource[self.name]["Pallates"][self.pallate][color])
+                    self.sprite.set_colorkey(state.objectsource[self.name]["Pallates"]["Default"][color])
+                    self.colorbrush.blit(self.sprite,(0,0))
+                    self.sprite.blit(self.colorbrush,(0,0))
+                self.sprite.set_colorkey(state.invis)
             
     #calcualte the points to use in collision detection
     def getpoints(self):
@@ -371,6 +375,7 @@ class character(gameObject):
 class spawner(gameObject):
     def __init__(self,locus,depth,parallax,name,extras):
         super().__init__(locus,depth,parallax,extras)
+        self.name = name
         self.data = state.objectsource[name]
         self.size = self.data.get("Sizes")["Default"]
         character.getpoints(self)

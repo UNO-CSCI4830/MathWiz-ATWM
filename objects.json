@@ -1,6 +1,6 @@
 {
     "MathWiz":{
-        "Type":"player",
+        "Type":"Player",
         "Frames":{
             "Idle1":[0,0,240,240,0,0],
             "Idle2":[246,3,240,240,0,0],
@@ -52,7 +52,9 @@
     "ExponentPlatform":{
         "Type":"Platform",
         "Frames":{},
-        "Animations":{},
+        "Animations":{
+            "Idle":[]
+        },
         "Pallates":{},
         "Sizes":{
             "Default":[480,480]
@@ -62,7 +64,9 @@
     "ExponentWrongPlatform":{
         "Type":"CollapsingPlatform",
         "Frames":{},
-        "Animations":{},
+        "Animations":{
+            "Idle":[]
+        },
         "Pallates":{},
         "Sizes":{
             "Default":[480,480]
@@ -72,7 +76,9 @@
     "ExponenetSign":{
         "Type":"Sign",
         "Frames":{},
-        "Animations":{},
+        "Animations":{
+            "Idle":[]
+        },
         "Pallates":{},
         "Sizes":{
             "Default":[240,240]
@@ -82,7 +88,9 @@
     "ExponentQuestionSpawner":{
         "Type":"spawner",
         "Frames":{},
-        "Animations":{},
+        "Animations":{
+            "Idle":[]
+        },
         "Pallates":{},
         "Sizes":{
             "Default":[0,0]

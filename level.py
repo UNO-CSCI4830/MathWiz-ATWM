@@ -1,8 +1,8 @@
 """
 Filename: level.py
 Author(s): Taliesin Reese
-Verion: 1.8
-Date: 10/15/2024
+Verion: 1.9
+Date: 10/21/2024
 Purpose: Level class and functions for "MathWiz!"
 """
 import pygame
@@ -24,11 +24,10 @@ class level:
         self.spinmap = self.datafile["rotates"]
         self.pallatemap = self.datafile["pallates"]
         self.objs = self.datafile["objects"]
-        self.animationlist = [[["tilemap",0,0,[[0,60],[1,60]]]]]
+        self.animationlist = self.datafile["animations"]
         for layer in range(len(self.tilemap)):
             drawlayer(self,layer)
         #spawn objects that are assigned to the level
-        objects.spawner([2220,1050],0,1,"ExponentQuestionSpawner",[])
         for item in self.objs:
             getattr(objects,item[0])(item[2],item[3],item[4],item[1],item[5])
             if state.gamemode == "edit":
