@@ -28,3 +28,10 @@ def loadlevel(levelname):
     import level
     state.currentlevel = level.level(levelname)
     #add object-spawning code down here
+
+#load the cutscene player
+def loadcutscene(scenename):
+    #clear all objects, resulting in their removal from memory after a while
+    state.objects = []
+    import cutscene
+    cutscene.cutscenePlayer(scenename)

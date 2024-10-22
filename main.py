@@ -42,12 +42,14 @@ state.tilesource = json.load(open("tiles.json"))
 state.tilesheet = pygame.image.load("Assets/images/tiles.png").convert()
 state.spritesheet = pygame.image.load("Assets/images/CharSprites.png").convert()
 state.objectsource = json.load(open("objects.json"))
+state.cutscenesource = json.load(open("cutscenes.json"))
 state.objects = []
 state.fpsTarget = 60
 state.cam = Cam.cam()
 
 #to start with, load menu stuffs
-menufuncs.loadmenu("test")
+#menufuncs.loadmenu("test")
+menufuncs.loadcutscene("testcutscene")
 
 while True:
     #input handling--maybe throw this into it's own file for the sake of organization?
