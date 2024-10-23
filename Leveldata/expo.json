@@ -3,7 +3,7 @@
     0
   ],
   "layerparallaxes": [
-    0
+    1
   ],
   "layerloops": [
     false
@@ -36884,7 +36884,5 @@
       ]
     ]
   ],
-  "objects": [
-    []
-  ]
+  "objects": [["Player", "MathWiz", [50, 10500], 0, 1, []]]
 }
