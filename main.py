@@ -1,3 +1,4 @@
+# MAIN.PY CONTEXT
 """
 Filename: main.py
 Author(s): Taliesin Reese
@@ -44,48 +45,46 @@ state.spritesheet = pygame.image.load("Assets/images/CharSprites.png").convert()
 state.objectsource = json.load(open("objects.json"))
 state.objects = []
 state.fpsTarget = 60
-state.cam = Cam.cam()
+
+# Initialize player
+state.player = objects.Player([50, 50], 0, 1, "MathWiz", [])
+
+# Initialize camera with player reference
+state.cam = Cam.cam(state.player)
 
 #to start with, load menu stuffs
 menufuncs.loadmenu("test")
 
 while True:
-    #input handling--maybe throw this into it's own file for the sake of organization?
-    #newkeys is a suprise tool that will help us later
+    # input handling
     state.newkeys = []
-    #position of the mouse cursor relative to the window. Adjusted for the scaling.
     state.mouse = pygame.mouse.get_pos()
-    state.mouse = (state.mouse[0]*state.screensize[0]/800,state.mouse[1]*state.screensize[1]/800)
-    #current state of the mouse buttons
+    state.mouse = (state.mouse[0] * state.screensize[0] / 800, state.mouse[1] * state.screensize[1] / 800)
     state.click = pygame.mouse.get_pressed()
     events = pygame.event.get()
     for event in events:
-        #quit logic
         if event.type == pygame.QUIT:
             pygame.quit()
             quit()
         if event.type == pygame.KEYDOWN:
-            #if a key is newly down on this frame, it's important. Add it to newkeys
             state.newkeys.append(event.key)
-    #current state of keyboard keys
     state.keys = pygame.key.get_pressed()
-    
-    """FOR TESTING UNDER HEAVY LAG:"""
-    #from time import sleep
-    #sleep(0.25)
 
-    #calculate deltatime. This is used to augment certain values and keep the speed of things independent from the framerate
+    # calculate deltatime
     if state.adjustdeltatime:
-        state.deltatime = state.fpsTarget*clock.get_time()/(1000)
-    #print(state.deltatime)
-    #reset display
-    state.display.fill((0,0,255))
-    #update world
+        state.deltatime = state.fpsTarget * clock.get_time() / 1000
+
+    # reset display
+    state.display.fill((0, 0, 255))
+
+    # update camera position
     state.cam.update()
+
+    # update world
     for thing in state.objects:
         thing.update()
 
-    #display
-    state.window.blit(pygame.transform.scale(state.display,(state.displaysize,state.displaysize)),(0,0))
+    # display
+    state.window.blit(pygame.transform.scale(state.display, (state.displaysize, state.displaysize)), (0, 0))
     pygame.display.flip()
     clock.tick()

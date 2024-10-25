@@ -506,11 +506,11 @@ class Hitbox(gameObject):
             self.hitobjects.append(trigger)
     
 class Player(character):
-    def __init__(self,locus,depth,parallax,name,extras):
-        super().__init__(locus,depth,parallax,name,extras)
-        #self.sprite.fill((255,0,0))
-        #pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
-    #this update is the same as the one for generic characters, but it allows the player to control it.
+    def __init__(self, locus, depth, parallax, name, extras):
+        super().__init__(locus, depth, parallax, name, extras)
+        self.lastdir = self.direction  # Initialize lastdir
+
+    # this update is the same as the one for generic characters, but it allows the player to control it.
     def update(self):
         if state.gamemode != "edit":
             self.lastanim = self.animname
@@ -519,22 +519,22 @@ class Player(character):
             self.lasttop = self.top.copy()
             self.lastleft = self.left.copy()
             self.lastright = self.right.copy()
-            self.lastdir = self.direction
+            self.lastdir = self.direction  # Update lastdir
             self.physics()
             self.playerControl()
             self.actionupdate()
-            #print(self.speed)
-            self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
-            while self.movement != [0,0]:
+            # print(self.speed)
+            self.movement = [self.speed[0] * state.deltatime, self.speed[1] * state.deltatime]
+            while self.movement != [0, 0]:
                 self.move()
                 self.collide()
                 self.objcollide()
             self.collide()
             self.objcollide()
-            #state.cam.focus = self.pos#(4250,3120)
+            # state.cam.focus = self.pos#(4250,3120)
         for item in self.children:
-            item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
-            item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
+            item.pos[0] = item.pos[0] + (self.pos[0] - self.lastpos[0])
+            item.pos[1] = item.pos[1] + (self.pos[1] - self.lastpos[1])
         self.animationpick()
         self.animationupdate()
         self.render()
