@@ -1,8 +1,8 @@
 """
 Filename: main.py
 Author(s): Taliesin Reese
-Verion: 1.5
-Date: 10/16/2024
+Verion: 1.6
+Date: 10/26/2024
 Purpose: Core file for "MathWiz!"
 """
 #premade library imports
@@ -18,33 +18,42 @@ import menufuncs
 
 #initialize pygame stuffs
 pygame.init()
+
+#Load settings
+state.savedata = json.load(open("Save.json"))
+state.savefile = 1
+
+state.adjustdeltatime = state.savedata[str(state.savefile)]["adjustdeltatime"]
+state.movetickamount = state.savedata[str(state.savefile)]["movetickamount"]
+#size to actually display stuff
+state.displaysize = state.savedata[str(state.savefile)]["displaysize"]
 #the tilesize is a lynchpin. All measures in the game save for the final render size are based on the tile (or, they will be in the final product. Not all of them are right now)
 state.tilesize = 120
-#size to actually display stuff
-state.displaysize = 800
 #anyway set up pygame stuff
 state.screensize = (state.tilesize*30,state.tilesize*30)
 state.window = pygame.display.set_mode((state.displaysize,state.displaysize))
 state.display = pygame.Surface(state.screensize)
-state.font = pygame.font.SysFont("Lucida Console",100)
+state.HUD = pygame.Surface(state.screensize)
+state.font = pygame.font.SysFont("Lucida Console",75)
 
 #initialize timer
 clock = pygame.time.Clock()
 
-#initialize game stuffs
-state.gamemode = "play"
-state.invis = (255,0,255)
-state.movetickamount = 120
-state.deltatime = 1
-state.adjustdeltatime = True
-state.writer = pygame.font.SysFont("Arial",150)
+#load assets
 state.tilesource = json.load(open("tiles.json"))
 state.tilesheet = pygame.image.load("Assets/images/tiles.png").convert()
 state.spritesheet = pygame.image.load("Assets/images/CharSprites.png").convert()
 state.objectsource = json.load(open("objects.json"))
 state.cutscenesource = json.load(open("cutscenes.json"))
-state.objects = []
+
+#initialize game stuffs
+state.gamemode = "play"
+state.invis = (255,0,255)
+state.HUD.set_colorkey(state.invis)
+state.deltatime = 1
 state.fpsTarget = 60
+
+state.objects = []
 state.cam = Cam.cam()
 
 #to start with, load menu stuffs
@@ -82,11 +91,13 @@ while True:
     #print(state.deltatime)
     #reset display
     state.display.fill((0,0,255))
+    state.HUD.fill((255,0,255))
     #update world
     state.cam.update()
     for thing in state.objects:
         thing.update()
-
+    #draw HUD
+    state.display.blit(state.HUD,(0,0))
     #display
     state.window.blit(pygame.transform.scale(state.display,(state.displaysize,state.displaysize)),(0,0))
     pygame.display.flip()

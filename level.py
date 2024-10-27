@@ -1,8 +1,8 @@
 """
 Filename: level.py
 Author(s): Taliesin Reese
-Verion: 1.9
-Date: 10/21/2024
+Verion: 1.11
+Date: 10/26/2024
 Purpose: Level class and functions for "MathWiz!"
 """
 import pygame
@@ -41,15 +41,8 @@ class drawlayer:
         self.level = level
         self.layernum = layernum
         self.calcsize()
-        if len(self.level.animationlist)-1 == self.layernum:
-            self.animationlist = self.level.animationlist[self.layernum]
-        else:
-            self.animationlist = []
-        self.animtimers = []
-        self.animframes = []
-        for sequence in self.animationlist:
-            self.animtimers.append(0)
-            self.animframes.append(0)
+
+        self.animlistrecalc()
             
         self.brush = pygame.Surface((state.tilesize,state.tilesize)).convert()
         self.brush.fill(state.invis)
@@ -108,10 +101,10 @@ class drawlayer:
         if tilenum != self.brushval or pallatenum != self.brushpal:
             self.brush.fill(state.invis)
             self.brush.blit(state.tilesheet, (tileinfo[3][0],tileinfo[3][1]), (tileinfo[1][0],tileinfo[1][1],tileinfo[2][0],tileinfo[2][1]))
-            """
-            #this is a temporary rendering system. It should ultimately be replaced with graphics pulled from files based on tilenum.
+            
+            """#this is a temporary rendering system. It should ultimately be replaced with graphics pulled from files based on tilenum.
             #also, only changes the brush when the tilenum is different. This hopefully saves on execution time.
-            FOR DEBUGGING PURPOSES
+            #FOR DEBUGGING PURPOSES
             if tilenum == 1:
                 self.brush.fill((0,0,255))
             elif tilenum == 2:
@@ -121,8 +114,8 @@ class drawlayer:
             elif tilenum == 4:
                 pygame.draw.polygon(self.brush, (255,255,0), ([0,state.tilesize],[0,state.tilesize/2],[state.tilesize,0],[state.tilesize,state.tilesize]))
             elif tilenum == 5:
-                pygame.draw.polygon(self.brush, (255,0,0), ([0,state.tilesize],[0,state.tilesize/2],[state.tilesize,state.tilesize/2],[state.tilesize,state.tilesize]))
-                """
+                pygame.draw.polygon(self.brush, (255,0,0), ([0,state.tilesize],[0,state.tilesize/2],[state.tilesize,state.tilesize/2],[state.tilesize,state.tilesize]))"""
+                
             self.brushval = tilenum
             #set pallate value to tile's default value
             self.brushpal = tileinfo[4]
@@ -147,19 +140,30 @@ class drawlayer:
         flipval = self.level.flipmap[self.layernum][row][tile]
         if flipval == 1:
             self.flipx = True
+            self.flipy = False
         elif flipval == 2:
             self.flipx = True
             self.flipy = True
         elif flipval == 3:
             self.flipy = True
+            self.flipx = False
         else:
             self.flipx = False
             self.flipy = False
         #render layer
         self.workcanvas.blit(pygame.transform.flip(pygame.transform.rotate(self.brush,self.rotate),self.flipx,self.flipy),(tile*state.tilesize,row*state.tilesize))
-        
+
+    def animlistrecalc(self):
+        self.animationlist = self.level.animationlist[self.layernum]
+        self.animtimers = []
+        self.animframes = []
+        for sequence in self.animationlist:
+            self.animtimers.append(0)
+            self.animframes.append(0)
+            
     def update(self):
         #update tile animations
+        #print(self.animationlist)
         for timer in range(len(self.animtimers)):
             self.animtimers[timer] += state.deltatime
         for sequencenum in range(len(self.animationlist)):
@@ -178,7 +182,7 @@ class drawlayer:
                     tileinfo = state.tilesource["tiles"][str(tilenum)]
                     self.tileupdate(row,tile,tileinfo,tilenum,pallatenum)
             if state.gamemode == "edit":
-                col = int(255*self.animtimers[sequencenum]/60)
+                col = int(255*self.animtimers[sequencenum]/self.animationlist[sequencenum][3][self.animframes[sequencenum]][1])
                 row = self.animationlist[sequencenum][2]
                 tile = self.animationlist[sequencenum][1]
                 pygame.draw.rect(self.workcanvas, (0,col,col,50), (tile*state.tilesize,row*state.tilesize,state.tilesize,state.tilesize))

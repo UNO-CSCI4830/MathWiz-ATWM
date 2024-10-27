@@ -1,8 +1,8 @@
 """
 Filename: menu.py
 Author(s): Taliesin Reese
-Version: 1.0
-Date: 9/8/2024
+Version: 1.1
+Date: 10/26/2024
 Purpose: Menu elements and layouts for "MathWiz!"
 """
 import pygame

@@ -1,8 +1,8 @@
 """
 Filename: objects.py
 Author(s): Talieisn Reese
-Version: 1.9
-Date: 10/21/2024
+Version: 1.10
+Date: 10/26/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
@@ -61,6 +61,7 @@ class character(gameObject):
         self.lastanim = "Idle"
         self.animframe = 0
         self.animtime = 0
+        self.requestanim = False
         if state.gamemode == "edit":
             self.animationupdate()
         #determine points for collision
@@ -96,18 +97,19 @@ class character(gameObject):
         self.lastright = self.right.copy()
         self.lastdir = self.direction
         self.actionupdate()
-        self.physics()
-        self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
-        while self.movement != [0,0]:
-            self.move()
-            self.collide()
+        if self in state.objects:
+            self.physics()
+            self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
+            while self.movement != [0,0]:
+                self.move()
+                self.collide()
+                self.objcollide()
             self.objcollide()
-        self.objcollide()
-        self.collide()
-        for item in self.children:
-            item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
-            item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
-        self.render()
+            self.collide()
+            for item in self.children:
+                item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
+                item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
+            self.render()
 
     def actionupdate(self):
         #iterate through every action in the queue.
@@ -135,20 +137,21 @@ class character(gameObject):
                         
     def animationpick(self):
         #OVERRIDE: If specially requested, play that animation until completion.
-        #if nonxero speed on x-axis and grounded, return the walking animation
-        if self.grounded:
-            if abs(self.speed[0]) > 0:
-                self.animname = "Walk"
-            #by default, return the idle animation
-            else:
-                self.animname = "Idle"
-        #if not grounded and going up, retun jumping animation
-        elif self.grounded == False:
-            #if notgrounded and falling down, return falling animation
-            if self.speed[1] >= 0:
-                self.animname = "Fall"
-            else:
-                self.animname = "Jump"
+        if self.requestanim == False:
+            #if nonxero speed on x-axis and grounded, return the walking animation
+            if self.grounded:
+                if abs(self.speed[0]) > 0:
+                    self.animname = "Walk"
+                #by default, return the idle animation
+                else:
+                    self.animname = "Idle"
+            #if not grounded and going up, retun jumping animation
+            elif self.grounded == False:
+                #if notgrounded and falling down, return falling animation
+                if self.speed[1] >= 0:
+                    self.animname = "Fall"
+                else:
+                    self.animname = "Jump"
         if self.animname != self.lastanim:
             self.animtime = 0
             self.animframe = 0
@@ -163,6 +166,7 @@ class character(gameObject):
                 self.animtime = 0
                 if self.animframe >= len(anim):
                     self.animframe = 0
+                    self.requestanim = False
             #draw the sprite
             self.sprite.blit(state.spritesheet, self.data["Frames"][anim[self.animframe][0]][4:],(self.data["Frames"][anim[self.animframe][0]][:4]))
             self.sprite = pygame.transform.rotate(pygame.transform.flip(self.sprite,anim[self.animframe][1][0],anim[self.animframe][1][1]),anim[self.animframe][2])
@@ -436,21 +440,26 @@ class Sign(character):
     def __init__(self,locus,depth,parallax,name,extras):
         super().__init__(locus,depth,parallax,name,extras)
         self.text = extras[0]
-        self.sprite.fill((100,100,0))
+        #self.sprite.fill((100,100,0))
     def update(self):
         super().update()
-        self.sprite.blit(state.writer.render(self.text,False,(255,255,0)),(0,0))
+        self.animationupdate()
+        self.sprite.blit(state.font.render(self.text,False,(255,255,180)),(40,40))
     
         
 class Platform(character):
     def __init__(self,locus,depth,parallax,name,extras):
         super().__init__(locus,depth,parallax,name,extras)
         self.gravity = 0
-        self.sprite.fill((100,0,0))
-        pygame.draw.rect(self.sprite,(255,0,0),(0,0,self.size[0],20))
+        #self.sprite.fill((100,0,0))
+        #pygame.draw.rect(self.sprite,(255,0,0),(0,0,self.size[0],20))
 
     def collide(self):
         pass
+    
+    def update(self):
+        super().update()
+        self.animationupdate()
         
     def collidefunction(self,trigger):
         if trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0:
@@ -463,16 +472,21 @@ class CollapsingPlatform(Platform):
     def __init__(self,locus,depth,parallax,name,extras):
         super().__init__(locus,depth,parallax,name,extras)
         self.collapsing = False
+    
+    def update(self):
+        super().update()
+        self.animationupdate()
         
     def collidefunction(self,trigger):
         if trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0 and self.collapsing == False and type(trigger) == Player:
-            self.sprite.fill((0,0,100))
-            pygame.draw.rect(self.sprite,(0,0,255),(0,0,self.size[0],20))
+            #self.sprite.fill((0,0,100))
+            #pygame.draw.rect(self.sprite,(0,0,255),(0,0,self.size[0],20))
+            self.animname = "Break"
             trigger.grounded = True
             trigger.speed[1] = 0
             trigger.movement[1] = 0
             trigger.pos[1] = self.top[1] - trigger.size[1]
-            self.actionqueue.append([30,["collapsestart",None],["self","collapsing",True]])
+            self.actionqueue.append([6,["collapsestart",None],["self","collapsing",True]])
             self.actionqueue.append([60,["delete",None],[None,None,True]])
             
 class Hitbox(gameObject):
@@ -509,10 +523,28 @@ class Hitbox(gameObject):
             if self.mode == "dmg":
                 trigger.damagetake(self.amt)
             self.hitobjects.append(trigger)
-    
+            
+class collectGoal(character):
+    def __init__(self,locus,depth,parallax,name,extras):
+        super().__init__(locus,depth,parallax,name,extras)
+        self.sprite.fill((0,0,100))
+        self.gotten = False
+    def collidefunction(self,trigger):
+        if type(trigger).__name__ == "Player" and self.gotten == False:
+            trigger.control = False
+            trigger.speed[0] = 0
+            trigger.animname = "Win"
+            trigger.requestanim = True
+            self.gotten = True
+            self.actionqueue.append([120,["loadnextstate",["cutscene","testend"]],[None,None,True]])
+            
 class Player(character):
     def __init__(self,locus,depth,parallax,name,extras):
         super().__init__(locus,depth,parallax,name,extras)
+        self.abilities = ["Default","MMissile"]
+        self.weap = "Default"
+        self.control = True
+        self.HP = 100
         #self.sprite.fill((255,0,0))
         #pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
     #this update is the same as the one for generic characters, but it allows the player to control it.
@@ -526,7 +558,8 @@ class Player(character):
             self.lastright = self.right.copy()
             self.lastdir = self.direction
             self.physics()
-            self.playerControl()
+            if self.control:
+                self.playerControl()
             self.actionupdate()
             #print(self.speed)
             self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
@@ -536,10 +569,11 @@ class Player(character):
                 self.objcollide()
             self.collide()
             self.objcollide()
-            #state.cam.focus = self.pos#(4250,3120)
+            state.cam.focus = self.pos#(4250,3120)
         for item in self.children:
             item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
             item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
+        state.HUD.blit(state.font.render(f"HP:{self.HP}",False,[255,255,255],[0,0,0]),(30,30))
         self.animationpick()
         self.animationupdate()
         self.render()
@@ -562,11 +596,12 @@ class Player(character):
             if not state.keys[pygame.K_LSHIFT] and not state.keys[pygame.K_RSHIFT]:
                 self.direction = 1
             moves.walk(self,20)
-        if pygame.K_h in state.newkeys:
-            self.actionqueue.append([60,["jump",150],["keys",pygame.K_h,False]])
-        if pygame.K_p in state.newkeys:
-            self.actionqueue.append([5,["hitboxon","testpunch"],[None,None,True]])
-            self.actionqueue.append([65,["hitboxoff","testpunch"],[None,None,True]])
+        if pygame.K_q in state.newkeys:
+            self.actionqueue.append([0,["cyclepower",-1],[None,None,True]])
+        if pygame.K_e in state.newkeys:
+            self.actionqueue.append([0,["cyclepower",1],[None,None,True]])
+        if pygame.K_f in state.newkeys:
+            self.actionqueue.append([0,[f"weap{self.weap}",None],[None,None,True]])
 
     def damagetake(self,dmg):
         print(f"{dmg} damage-man, that really would've hurt if pain had been invented!")
