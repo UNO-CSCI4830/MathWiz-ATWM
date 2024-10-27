@@ -1,8 +1,8 @@
 """
 Filename: Editor.py
 Author(s): Taliesin Reese
-Version: 1.10
-Date: 10/21/2024
+Version: 1.11
+Date: 10/26/2024
 Purpose: Level Editor for MathWiz!
 """
 
@@ -186,10 +186,11 @@ def createtoolbox():
     state.pallateselect = tkinter.Listbox(tooloptions,selectmode = "single")
     for item in state.tilesource["pallatecodes"].values():
         state.pallateselect.insert("end",item)
-    
+
     state.objselect = tkinter.Listbox(tooloptions,selectmode = "single")
     for item in state.objectsource.keys():
         state.objselect.insert("end",item)
+    state.extrasget = tkinter.Text(tooloptions,height = 1, width = 20)
     
     state.animselect = tkinter.Listbox(tooloptions,selectmode = "single")
     for item in state.tilesource["anims"].keys():
@@ -232,8 +233,10 @@ def updatetoolbar():
                 state.addamt.pack_forget()
             if state.toolvarlast == 6:
                 state.objselect.pack()
+                state.extrasget.pack()
             else:
                 state.objselect.pack_forget()
+                state.extrasget.pack_forget()
             if state.toolvarlast == 7:
                 state.animselect.pack()
             else:
@@ -460,7 +463,7 @@ def colordrawupdate():
                 for tile in range(state.groupselect[1][0]-state.groupselect[0][0]):
                     try:
                     #change block type if list entry is clicked
-                        state.colorval = state.tileselect.curselection()[0]
+                        state.colorval = state.pallateselect.curselection()[0]
                     except:
                         state.colorval = 0
                     try:
@@ -534,6 +537,9 @@ def rowaddupdate():
     if state.click[0] and not state.wasclick[0]:
         addheight(tile,rows)
         state.levelchanged = True
+    elif state.click[2] and not state.wasclick[2]:
+        removeheight(tile,rows)
+        state.levelchanged = True
 
 def coladdupdate():
     cols = int(state.addamt.get())
@@ -543,6 +549,9 @@ def coladdupdate():
     pygame.draw.rect(state.display,(0,255,0),(locusupdate[0],-10,state.tilesize,state.screensize[1]+20),10)
     if state.click[0] and not state.wasclick[0]:
         addwidth(tile,cols)
+        state.levelchanged = True
+    elif state.click[2] and not state.wasclick[2]:
+        removewidth(tile,cols)
         state.levelchanged = True
 
 def animaddupdate():
@@ -560,26 +569,35 @@ def animaddupdate():
         #if there's a conflicting animation on that tile, remove it.
         for candidate in state.level.animationlist[state.renderlayer]:
             if tile[0]==candidate[1] and tile[1]==candidate[2] and anim[0]==candidate[0]:
-                state.level.animationlist.remove(candidate)
-                for item in state.objects:
-                    if type(item).__name__=="drawlayer":
-                        if item.depth==state.renderdepth:
-                            item.animationlist.delete(candidate)
-                            del item.animtimers[-1]
-                            del item.animframes[-1]
-                #if you find one, there will not be another.
+                state.level.animationlist[state.renderlayer].remove(candidate)
                 break
         #add animation to list
         state.level.animationlist[state.renderlayer].append([anim[0],tile[0],tile[1],anim[1]])
         for item in state.objects:
             if type(item).__name__=="drawlayer":
-                if item.depth==state.renderdepth:
-                    item.animtimers.append(0)
-                    item.animframes.append(0)
+                if item.layernum==state.renderlayer:
+                    item.animlistrecalc()
+                    break
+        state.levelchanged = True
+    #if rightclick:
+    elif state.click[2] and not state.wasclick[2]:
+        for candidate in state.level.animationlist[state.renderlayer]:
+            if tile[0]==candidate[1] and tile[1]==candidate[2]:
+                state.level.animationlist[state.renderlayer].remove(candidate)
+                state.levelchanged = True
+        if state.levelchanged:
+            for item in state.objects:
+                if type(item).__name__=="drawlayer":
+                    if item.layernum==state.renderlayer:
+                        item.animlistrecalc()
 
 def itemaddupdate():
     posadj = [state.mouse[0]+state.cam.pos[0]*state.parallaxmod,state.mouse[1]+state.cam.pos[1]*state.parallaxmod]
-    extras = ["TEST"]
+    try:
+        extras = state.extrasget.get('1.0','end-1c').split('`')
+    except:
+        print("AH")
+        extras = ["TEST"]
     #if new leftclick:
     if state.click[0] and not state.wasclick[0]:
         #place the selected object at that point
@@ -629,6 +647,13 @@ def addheight(target, rowstoadd):
         if type(object)==level.drawlayer and object.layernum == state.renderlayer:
             object.calcsize()
 
+def removeheight(target,rowstocut):
+    #delete rows at and following the current one
+    del state.level.tilemap[state.renderlayer][target[1]:target[1]+rowstocut]
+    del state.level.pallatemap[state.renderlayer][target[1]:target[1]+rowstocut]
+    del state.level.spinmap[state.renderlayer][target[1]:target[1]+rowstocut]
+    del state.level.flipmap[state.renderlayer][target[1]:target[1]+rowstocut]
+
 def addwidth(target, colstoadd):
     #add values into all the rows
     for row in range(len(state.level.tilemap[state.renderlayer])):
@@ -641,13 +666,21 @@ def addwidth(target, colstoadd):
         if type(object)==level.drawlayer and object.layernum == state.renderlayer:
             object.calcsize()
 
+def removewidth(target,colstocut):
+    #delete tiles from every row at and following the current one
+    for row in range(len(state.level.tilemap[state.renderlayer])):
+        del state.level.tilemap[state.renderlayer][row][target[0]:target[0]+colstocut]
+        del state.level.pallatemap[state.renderlayer][row][target[0]:target[0]+colstocut]
+        del state.level.spinmap[state.renderlayer][row][target[0]:target[0]+colstocut]
+        del state.level.flipmap[state.renderlayer][row][target[0]:target[0]+colstocut]
+    
 def addLayer():
     num = state.renderlayer
     for item in state.objects:
         if type(item) == level.drawlayer:
             if item.layernum >= state.renderlayer:
                 item.layernum += 1
-    level.drawlayer(state.level,state.renderdepth)
+    level.drawlayer(state.level,state.renderlayer)
     state.level.tilemap.insert(num,blank())
     state.level.pallatemap.insert(num,blank())
     state.level.spinmap.insert(num,blank())
@@ -655,6 +688,7 @@ def addLayer():
     state.editloops.insert(num,False)
     state.level.depths.insert(num,state.renderdepth)
     state.level.parallaxes.insert(num,state.renderdepth)
+    state.level.animationlist.insert(num,[])
     state.layercount += 1
     state.Layerswitch.config(to = state.layercount)
     #state.renderlayer = num+1
