@@ -1,8 +1,8 @@
 """
 Filename: main.py
 Author(s): Taliesin Reese
-Verion: 1.6
-Date: 10/26/2024
+Verion: 1.7
+Date: 10/28/2024
 Purpose: Core file for "MathWiz!"
 """
 #premade library imports
@@ -15,6 +15,7 @@ import menu
 import level
 import objects
 import menufuncs
+import maker
 
 #initialize pygame stuffs
 pygame.init()
@@ -48,6 +49,7 @@ state.cutscenesource = json.load(open("cutscenes.json"))
 
 #initialize game stuffs
 state.gamemode = "play"
+state.maker = maker.maker()
 state.invis = (255,0,255)
 state.HUD.set_colorkey(state.invis)
 state.deltatime = 1

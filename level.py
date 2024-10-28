@@ -1,14 +1,14 @@
 """
 Filename: level.py
 Author(s): Taliesin Reese
-Verion: 1.11
-Date: 10/26/2024
+Verion: 1.12
+Date: 10/28/2024
 Purpose: Level class and functions for "MathWiz!"
 """
 import pygame
 import json
 import menufuncs
-import objects
+#import objects
 import GameData as state
 import random
 
@@ -29,7 +29,8 @@ class level:
             drawlayer(self,layer)
         #spawn objects that are assigned to the level
         for item in self.objs:
-            getattr(objects,item[0])(item[2],item[3],item[4],item[1],item[5])
+            #getattr(objects,item[0])(item[2],item[3],item[4],item[1],item[5])
+            state.maker.make_obj(item[0],(item[2],item[3],item[4],item[1],item[5]))
             if state.gamemode == "edit":
                 state.editobjs.append(item)
         #state.player = objects.Player([50,50],(0), "MathWiz")

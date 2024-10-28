@@ -1,8 +1,8 @@
 """
 Filename: objects.py
-Author(s): Talieisn Reese
-Version: 1.10
-Date: 10/26/2024
+Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold
+Version: 1.12
+Date: 10/28/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
@@ -31,15 +31,17 @@ class gameObject:
     def delete(self):
         try:
             state.objects.remove(self)
+            if state.camera.focusobj == self:
+                state.camera.focusobj = None
         except:
             pass
 
 #slightly less basic class to build characters on--players, enemies, moving platforms, bosses, etc.
 class character(gameObject):
     def __init__(self,locus,depth,parallax,name,extras):
-        super().__init__(locus,depth,parallax,extras)
         #extra data used for individual object types
         self.data = state.objectsource[name]
+        super().__init__(locus,depth,parallax,extras)
         #extra variables handle things unique to objects with more logic: movement, gravity, grounded state, etc.
         self.movement = [0,0]
         self.direction = 1
@@ -71,21 +73,10 @@ class character(gameObject):
         self.lastleft = self.left.copy()
         self.lastright = self.right.copy()
         self.collidepoints = [self.left,self.top,self.right,self.bottom,self.lastleft,self.lasttop,self.lastright,self.lastbottom]
-        self.xlowestpoint = self.collidepoints[0]
-        self.xhighestpoint = self.collidepoints[0]
-        self.ylowestpoint = self.collidepoints[0]
-        self.yhighestpoint = self.collidepoints[0]
         #the action queue is used to hold the current action.
         self.actionqueue = []
-        #a dictionary of hitboxes that this object can spawn--a dictionary is used so that we can activate and deactivate them by name. Will likely be used more for enemies than for MathWiz himself
-        hitboxsource = self.data["Hitboxes"]
-        self.hitboxes = {}
-        for item in hitboxsource.keys():
-            extra = hitboxsource[item][1]
-            extra.append(self)
-            created = Hitbox(hitboxsource[item][0],self.depth,self.parallax,extra)
-            self.children.append(created)
-            self.hitboxes[item] = created
+        #allegience value for projectile and damage collisions.
+        self.allegience = "Enemy"
 
     #run every frame to update the character's logic    
     def update(self):
@@ -97,6 +88,7 @@ class character(gameObject):
         self.lastright = self.right.copy()
         self.lastdir = self.direction
         self.actionupdate()
+        self.getpoints()
         if self in state.objects:
             self.physics()
             self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
@@ -301,7 +293,7 @@ class character(gameObject):
         self.grounded = self.pointcollide([self.bottom[0],self.bottom[1]])
         if self.grounded:
             dist = 1
-            while True:
+            while dist <= 600:
                 if self.pointcollide([self.bottom[0],self.bottom[1]-dist]) == True:
                     dist += 1
                 else:
@@ -326,7 +318,7 @@ class character(gameObject):
         self.topblock =  self.pointcollide(self.top)
         if self.topblock:
             dist = 1
-            while True:
+            while dist <= 600:
                 if not self.pointcollide([self.top[0],self.top[1]+dist]):
                     self.pos[1]+=dist-1
                     self.getpoints()
@@ -337,7 +329,7 @@ class character(gameObject):
         self.leftblock =  self.pointcollide(self.left)
         if self.leftblock:
             dist = 1
-            while True:
+            while dist <= 600:
                 if not self.pointcollide([self.left[0]+dist,self.left[1]]):
                     self.pos[0]+=dist-1
                     self.getpoints()
@@ -348,7 +340,7 @@ class character(gameObject):
         self.rightblock =  self.pointcollide(self.right)
         if self.rightblock:
             dist = 1
-            while True:
+            while dist <= 600:
                 if not self.pointcollide([self.right[0]-dist,self.right[1]]):
                     self.pos[0]-=dist-1
                     self.getpoints()
@@ -476,6 +468,12 @@ class CollapsingPlatform(Platform):
     def update(self):
         super().update()
         self.animationupdate()
+
+    #force the platform to collapse when shot
+    def damagetake(self,amount):
+        self.animname = "Break"
+        self.actionqueue.append([6,["collapsestart",None],["self","collapsing",True]])
+        self.actionqueue.append([60,["delete",None],[None,None,True]])
         
     def collidefunction(self,trigger):
         if trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0 and self.collapsing == False and type(trigger) == Player:
@@ -491,14 +489,15 @@ class CollapsingPlatform(Platform):
             
 class Hitbox(gameObject):
     def __init__(self,locus,depth,parallax,extras):
-        super().__init__([extras[3].pos[0]+locus[0],extras[3].pos[1]+locus[1]],depth,parallax,extras)
-        self.parent = extras[3]
-        self.hitobjects = []
         self.offset = locus
         self.size = extras[0]
         self.mode = extras[1]
         self.amt = extras[2]
-        self.active = False
+        self.lifespan = extras[3]
+        self.parent = extras[4]
+        super().__init__([self.parent.pos[0]+self.offset[0],self.parent.pos[1]+self.offset[1]],depth,parallax,extras)
+        self.hitobjects = []
+        self.parent.children.append(self)
         self.getpoints()
     #calcualte the points to use in collision detection
     def getpoints(self):
@@ -507,19 +506,25 @@ class Hitbox(gameObject):
         self.top = [int(self.pos[0]+self.size[0]/2),self.pos[1]]
         self.bottom = [int(self.pos[0]+self.size[0]/2),self.pos[1]+self.size[1]]
     def update(self):
-        if self.parent.lastdir != self.parent.direction:
-            if self.parent.direction == 1:
-                self.pos[0] += 2*self.offset[0]
-            elif self.parent.direction == -1:
-                self.pos[0] -= 2*self.offset[0]
+        #update the lifespan timer, and remove the object if it's number is up.
+        if type(self.lifespan) in [int,float]:
+            self.lifespan -= state.deltatime
+            if self.lifespan <= 0:
+                self.parent.children.remove(self)
+                self.delete()
+        if self.parent.direction == 1:
+            self.pos[0] = self.parent.pos[0]+self.offset[0]
+        elif self.parent.direction == -1:
+            self.pos[0] = self.parent.pos[0]-(self.offset[0])
         self.getpoints()
-        if self.active:
-            self.render()
+        self.render()
+
     def render(self):
         parallaxmod = self.parallax - state.cam.depth
         pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
+
     def collidefunction(self,trigger):
-        if self.active and trigger != self.parent and trigger not in self.hitobjects:
+        if trigger.allegience != self.parent.allegience and trigger not in self.hitobjects:
             if self.mode == "dmg":
                 trigger.damagetake(self.amt)
             self.hitobjects.append(trigger)
@@ -537,6 +542,44 @@ class collectGoal(character):
             trigger.requestanim = True
             self.gotten = True
             self.actionqueue.append([120,["loadnextstate",["cutscene","testend"]],[None,None,True]])
+
+class Projectile(character):
+    def __init__(self,locus,depth,parallax,name,extras):
+        super().__init__([extras[0].pos[0]+locus[0],extras[0].pos[1]+locus[1]],depth,parallax,name,extras)
+        
+        self.gravity = 0
+        self.allegience = extras[0].allegience
+        self.direction = extras[0].direction
+        self.damage = 10
+        if extras[0].direction == 1:
+            self.movespeed = [50,0]
+        else:
+            self.movespeed = [-50,0]
+        self.persistence = False
+        self.lifespan = 60
+
+    def update(self):
+        super().update()
+        self.speed[0] = self.movespeed[0]
+        #update the lifespan timer, and remove the object if it's number is up.
+        if type(self.lifespan) in (int,float):
+            self.lifespan -= state.deltatime
+            if self.lifespan <= 0:
+                self.delete()
+        if self.leftblock or self.rightblock or self.topblock or self.grounded:
+            if not self.persistence:
+                self.delete()
+
+    def render(self):
+        parallaxmod = self.parallax - state.cam.depth
+        pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
+                
+    def collidefunction(self,trigger):
+        if self.allegience != trigger.allegience and hasattr(trigger,"damagetake"):
+            print(trigger.allegience)
+            trigger.damagetake(self.damage)
+            if not self.persistence:
+                self.delete()
             
 class Player(character):
     def __init__(self,locus,depth,parallax,name,extras):
@@ -545,6 +588,9 @@ class Player(character):
         self.weap = "Default"
         self.control = True
         self.HP = 100
+        self.allegience = "Hero"
+        #make the camera focus on this object
+        state.cam.focusobj = self
         #self.sprite.fill((255,0,0))
         #pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
     #this update is the same as the one for generic characters, but it allows the player to control it.
@@ -569,7 +615,6 @@ class Player(character):
                 self.objcollide()
             self.collide()
             self.objcollide()
-            state.cam.focus = self.pos#(4250,3120)
         for item in self.children:
             item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
             item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])

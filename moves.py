@@ -1,8 +1,8 @@
 """
 Filename: moves.py
 Author(s): Taliesin Reese
-Version: 1.4
-Date: 10/26/2024
+Version: 1.5
+Date: 10/28/2024
 Purpose: moves to be used in "MathWiz!"
 """
 import GameData as state
@@ -56,21 +56,20 @@ def delete(caller,burner):
 def loadnextstate(caller,data):
     getattr(menufuncs,f"load{data[0]}")(data[1])
 
-def hitboxon(caller,hitboxname):
-    caller.hitboxes[hitboxname].active = True
-    
-def hitboxoff(caller,hitboxname):
-    caller.hitboxes[hitboxname].active = False
-    caller.hitboxes[hitboxname].hitobjects = []
+def hitboxon(caller,data):
+    state.maker.make_obj("Hitbox",data)
+
+def firebullet(caller,data):
+    state.maker.make_obj("Projectile",data)
 
 def weapDefault(caller,Burner):
     caller.requestanim = True
     caller.animname = "Moonwalk"
-    caller.actionqueue.append([5,["hitboxon","testpunch"],[None,None,True]])
-    caller.actionqueue.append([65,["hitboxoff","testpunch"],[None,None,True]])
+    caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,[[240,240],"dmg",10,30,caller]]],[None,None,True]])
 
 def weapMMissile(caller,Burner):
-    caller.actionqueue.append([0,["jump",10],["keys",pygame.K_f,False]])
+    #caller.actionqueue.append([0,["jump",10],["keys",pygame.K_f,False]])
+    caller.actionqueue.append([5,["firebullet",[[120,0],caller.depth,caller.parallax,"Missile",[caller]]],[None,None,True]])
     
 def weapdirtycheaterpower(caller,Burner):
     print("I LOL'D")

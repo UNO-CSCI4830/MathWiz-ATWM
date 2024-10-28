@@ -1,3 +1,4 @@
 {
-    "testcutscene":["loadmenu",["test"]]
+    "testcutscene":["loadmenu",["test"]],
+    "testend":["loadmenu",["test"]]
 }
