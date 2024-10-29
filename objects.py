@@ -1,6 +1,6 @@
 """
 Filename: objects.py
-Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold, Zaid Kakish, Logan Jenison
+Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold, Zaid Kakish, Logan 
 Version: 1.14
 Date: 10/29/2024
 Purpose: object classes for "MathWiz!"
