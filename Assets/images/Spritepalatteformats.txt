@@ -1,0 +1,4 @@
+When making new palattes for characters, these are the formats that should be used to ensure that the colors end up where we want.
+
+MathWiz:
+[Invis,Lineart,Cloak,Cloakshade,Hat,Hatshade,Glove,Gloveshade,Glasses,Glasseshighlight,Boots]
