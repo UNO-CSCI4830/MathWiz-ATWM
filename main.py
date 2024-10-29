@@ -46,7 +46,7 @@ state.tilesheet = pygame.image.load("Assets/images/tiles.png").convert()
 state.spritesheet = pygame.image.load("Assets/images/CharSprites.png").convert()
 state.objectsource = json.load(open("objects.json"))
 state.cutscenesource = json.load(open("cutscenes.json"))
-state.menusheet = pygame.image.load("Assets/images/Titletest.png").convert()
+state.menusheet = pygame.image.load("Assets/images/menuassets.png").convert()
 
 #initialize game stuffs
 state.gamemode = "play"
@@ -61,7 +61,7 @@ state.cam = Cam.cam()
 
 #to start with, load menu stuffs
 #menufuncs.loadmenu("test")
-menufuncs.loadcutscene("testcutscene")
+menufuncs.loadcutscene("Intro")
 
 while True:
     #input handling--maybe throw this into it's own file for the sake of organization?

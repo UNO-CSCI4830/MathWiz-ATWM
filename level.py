@@ -1,8 +1,8 @@
 """
 Filename: level.py
 Author(s): Taliesin Reese
-Verion: 1.12
-Date: 10/28/2024
+Verion: 1.13
+Date: 10/29/2024
 Purpose: Level class and functions for "MathWiz!"
 """
 import pygame
@@ -15,6 +15,7 @@ import random
 #this class defines the levels that the player will traverse.
 class level:
     def __init__(self,name):
+        self.name = name
         self.datafile = json.load(open(f"Leveldata/{name}.json"))
         self.depths = self.datafile["layerdepths"]
         self.parallaxes = self.datafile["layerparallaxes"]

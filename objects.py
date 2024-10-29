@@ -1,8 +1,8 @@
 """
 Filename: objects.py
-Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold
-Version: 1.12
-Date: 10/28/2024
+Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold, Zaid Kakish, Logan 
+Version: 1.14
+Date: 10/29/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
@@ -58,6 +58,7 @@ class character(gameObject):
         self.colorbrush = pygame.Surface(self.size)
         self.sprite.set_colorkey(state.invis)
         self.pallate = "Default"
+        self.storepal = "Default"
         #stuff for animation
         self.animname = "Idle"
         self.lastanim = "Idle"
@@ -75,6 +76,7 @@ class character(gameObject):
         self.collidepoints = [self.left,self.top,self.right,self.bottom,self.lastleft,self.lasttop,self.lastright,self.lastbottom]
         #the action queue is used to hold the current action.
         self.actionqueue = []
+        self.stun = False
         #allegience value for projectile and damage collisions.
         self.allegience = "Enemy"
 
@@ -188,18 +190,18 @@ class character(gameObject):
                 #get the tile that the point is positioned on
                 tile = [int(point[0]//state.tilesize),int(point[1]//state.tilesize)]
                 #get values from said tile
-                try:
-                    #UNLESS the layer is supposed to loop--THEN simply loop the information from the list
-                    if item.loop == True:
-                        tile = [tile[0]%(item.longest), tile[1]%(len(state.level.tilemap[item.layernum]))]
-                    tiletype = state.level.tilemap[item.layernum][tile[1]][tile[0]]
-                    tileflip = state.level.flipmap[item.layernum][tile[1]][tile[0]]
-                    tilerotate = state.level.spinmap[item.layernum][tile[1]][tile[0]]
+                #UNLESS the layer is supposed to loop--THEN simply loop the information from the list
+                if item.loop == True:
+                    tile = [tile[0]%(item.longest), tile[1]%(len(state.level.tilemap[item.layernum]))]
                 #unless it doesn't exist. Then, treat it as if it were solid to prevent out-of-bounds errors
-                except:
+                if (tile[0] < 0 or tile[1] < 0) or (tile[0] >= item.longest or tile[1] >= len(state.level.tilemap[item.layernum])):
                     tiletype = 1
                     tileflip = 0
                     tilerotate = 0
+                else:
+                    tiletype = state.level.tilemap[item.layernum][tile[1]][tile[0]]
+                    tileflip = state.level.flipmap[item.layernum][tile[1]][tile[0]]
+                    tilerotate = state.level.spinmap[item.layernum][tile[1]][tile[0]]
                 #calculate the position of the point within the tile
                 x=point[0]%state.tilesize
                 y=point[1]%state.tilesize
@@ -536,12 +538,12 @@ class collectGoal(character):
         self.gotten = False
     def collidefunction(self,trigger):
         if type(trigger).__name__ == "Player" and self.gotten == False:
-            trigger.control = False
+            trigger.stun = True
             trigger.speed[0] = 0
             trigger.animname = "Win"
             trigger.requestanim = True
             self.gotten = True
-            self.actionqueue.append([120,["loadnextstate",["cutscene","testend"]],[None,None,True]])
+            self.actionqueue.append([120,["loadnextstate",["cutscene","outro"]],[None,None,True]])
 
 class Projectile(character):
     def __init__(self,locus,depth,parallax,name,extras):
@@ -586,8 +588,7 @@ class Player(character):
         super().__init__(locus,depth,parallax,name,extras)
         self.abilities = ["Default","MMissile"]
         self.weap = "Default"
-        self.control = True
-        self.HP = 100
+        self.health = 100
         self.allegience = "Hero"
         #make the camera focus on this object
         state.cam.focusobj = self
@@ -604,7 +605,7 @@ class Player(character):
             self.lastright = self.right.copy()
             self.lastdir = self.direction
             self.physics()
-            if self.control:
+            if not self.stun:
                 self.playerControl()
             self.actionupdate()
             #print(self.speed)
@@ -618,7 +619,9 @@ class Player(character):
         for item in self.children:
             item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
             item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
-        state.HUD.blit(state.font.render(f"HP:{self.HP}",False,[255,255,255],[0,0,0]),(30,30))
+        state.HUD.blit(state.font.render(f"HP:{self.health}",False,[255,255,255],[0,0,0]),(30,30))
+        if self.health <= 0:
+            state.HUD.blit(state.font.render(f"Game Over",False,[255,0,0],[0,0,0]),(1800,1800))
         self.animationpick()
         self.animationupdate()
         self.render()
@@ -647,7 +650,25 @@ class Player(character):
             self.actionqueue.append([0,["cyclepower",1],[None,None,True]])
         if pygame.K_f in state.newkeys:
             self.actionqueue.append([0,[f"weap{self.weap}",None],[None,None,True]])
+        #test damage
+        if pygame.K_m in state.newkeys:
+            self.damagetake(10)
 
     def damagetake(self,dmg):
-        print(f"{dmg} damage-man, that really would've hurt if pain had been invented!")
+        if not self.stun:
+            self.health -= dmg
+            self.animname = "Fall"
+            self.requestanim = True
+            self.actionqueue.append([0,["walk",10],[None,None,True]])
+            self.actionqueue.append([0,["jump",20],[None,None,True]])
+            self.actionqueue.append([0,["stun",dmg],[None,None,True]])
+            self.actionqueue.append([30,["destun",dmg],[None,None,True]])
+        if self.health <= 0:
+            self.gameover()
+
+    def gameover(self):
+        self.actionqueue.append([120,["loadnextstate",["level",state.level.name]],[None,None,True]])
+        self.actionqueue.append([30,["stun",None],[None,None,True]])
+        self.animname = "Fall"
+        self.requestanim = True
             

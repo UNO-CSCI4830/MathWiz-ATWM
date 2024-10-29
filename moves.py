@@ -1,8 +1,8 @@
 """
 Filename: moves.py
 Author(s): Taliesin Reese
-Version: 1.5
-Date: 10/28/2024
+Version: 1.6
+Date: 10/29/2024
 Purpose: moves to be used in "MathWiz!"
 """
 import GameData as state
@@ -61,6 +61,15 @@ def hitboxon(caller,data):
 
 def firebullet(caller,data):
     state.maker.make_obj("Projectile",data)
+
+def stun(caller,data):
+    caller.stun = True
+    caller.storepal = caller.pallate
+    caller.pallate = "Stun"
+    
+def destun(caller,data):
+    caller.stun = False
+    caller.pallate = caller.storepal
 
 def weapDefault(caller,Burner):
     caller.requestanim = True
