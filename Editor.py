@@ -1,8 +1,8 @@
 """
 Filename: Editor.py
 Author(s): Taliesin Reese
-Version: 1.8
-Date: 10/14/2024
+Version: 1.11
+Date: 10/26/2024
 Purpose: Level Editor for MathWiz!
 """
 
@@ -17,6 +17,7 @@ import level
 import Cam
 import menufuncs
 import json
+import objects
 
 #create variables
 toolvar = 0
@@ -27,6 +28,7 @@ state.screensize = (state.tilesize*30,state.tilesize*30)
 state.window = pygame.display.set_mode((800,800))
 state.tilesource = json.load(open("tiles.json"))
 state.tilesheet = pygame.image.load("Assets/images/tiles.png").convert()
+state.spritesheet = pygame.image.load("Assets/images/CharSprites.png").convert()
 state.display = pygame.Surface(state.screensize)
 state.objectsource = json.load(open("objects.json"))
 state.objects = []
@@ -41,12 +43,14 @@ state.level = level.level("blank")
 #main loop
 def main():
     #create stuff for modification
+    state.editloops = [False]
     state.layercount = len(state.level.tilemap)
     state.tools = createtoolbox()
     state.renderdepth = 0
+    state.parallax = 1
     state.renderlayer = 0
     state.cam.depth = -(1-state.level.parallaxes[state.renderlayer])
-    state.editobjs =[]
+    state.editobjs = []
     state.groupselect = [[],[]]
     state.currentlayer = None
     #whether or not the level has been altered since last frame
@@ -89,6 +93,10 @@ def main():
                 rowaddupdate()
             case 5:
                 coladdupdate()
+            case 6:
+                itemaddupdate()
+            case 7:
+                animaddupdate()
             case _:
                 pass
 
@@ -137,6 +145,10 @@ def createtoolbox():
     vertadd.pack()
     horadd = ttk.Radiobutton(toolbar, text = "Add columns", variable = state.toolvar, value = 5)
     horadd.pack()
+    itemadd = ttk.Radiobutton(toolbar, text = "Add items", variable = state.toolvar, value = 6)
+    itemadd.pack()
+    animadd = ttk.Radiobutton(toolbar, text = "Add tile animations", variable = state.toolvar, value = 7)
+    animadd.pack()
     switchLabel = tkinter.Label(toolbar,text = "Layer:")
     switchLabel.pack()
     state.Layerswitch = tkinter.Spinbox(toolbar, from_=0, to=state.layercount-1, repeatdelay=500, repeatinterval=100,command=setlayer)
@@ -155,6 +167,8 @@ def createtoolbox():
     state.Parallaxswitch.pack()
     state.Parallaxswitch.delete(0,"end")
     state.Parallaxswitch.insert(0,0)
+    state.LoopBtn = tkinter.Checkbutton(toolbar,text = "Loop:",onvalue = True,offvalue = False,variable = state.editloops[state.layercount-1],command = setlayerloop)
+    state.LoopBtn.pack()
     addLayerBtn = tkinter.Button(toolbar, text = "Add new Layer", compound = "left", padx = 10, pady = 5, command = partial(addLayer))
     addLayerBtn.pack()
 
@@ -172,6 +186,15 @@ def createtoolbox():
     state.pallateselect = tkinter.Listbox(tooloptions,selectmode = "single")
     for item in state.tilesource["pallatecodes"].values():
         state.pallateselect.insert("end",item)
+
+    state.objselect = tkinter.Listbox(tooloptions,selectmode = "single")
+    for item in state.objectsource.keys():
+        state.objselect.insert("end",item)
+    state.extrasget = tkinter.Text(tooloptions,height = 1, width = 20)
+    
+    state.animselect = tkinter.Listbox(tooloptions,selectmode = "single")
+    for item in state.tilesource["anims"].keys():
+        state.animselect.insert("end",item)
     
     tooloptions.pack()
 
@@ -208,6 +231,16 @@ def updatetoolbar():
             else:
                 state.addamtlbl.pack_forget()
                 state.addamt.pack_forget()
+            if state.toolvarlast == 6:
+                state.objselect.pack()
+                state.extrasget.pack()
+            else:
+                state.objselect.pack_forget()
+                state.extrasget.pack_forget()
+            if state.toolvarlast == 7:
+                state.animselect.pack()
+            else:
+                state.animselect.pack_forget()
     except Exception as e:
         print(e)
         print(state.toolvar)
@@ -218,6 +251,8 @@ def save():
     print(state.level.depths,state.level.parallaxes)
     writeThis = {"layerdepths":state.level.depths,
                  "layerparallaxes":state.level.parallaxes,
+                 "layerloops":state.editloops,
+                 "animations":state.level.animationlist,
                  "tiles":state.level.tilemap,
                  "flips":state.level.flipmap,
                  "rotates":state.level.spinmap,
@@ -237,16 +272,30 @@ def load():
         state.objects = []
         state.editobjs = []
         state.level = level.level(levelname)
+        state.editloops = state.level.loops
+        state.LoopBtn.config(variable = state.editloops[state.renderlayer])
+        if state.editloops[state.renderlayer]:
+            state.LoopBtn.select()
+        else:
+            state.LoopBtn.deselect()
+        
         state.layercount = len(state.level.tilemap)
         state.Layerswitch.config(to = state.layercount-1)
     except Exception as e:
-        print(e)
+        raise e
         print("No such file!")
         
 #new levels
 def new():
     state.objects = []
+    state.editobjs = []
     state.level = level.level("blank")
+    state.editloops = state.level.loops
+    state.LoopBtn.config(variable = state.editloops[state.renderlayer])
+    if state.editloops[state.renderlayer]:
+        state.LoopBtn.select()
+    else:
+        state.LoopBtn.deselect()
 
 def setlayer():
     try:
@@ -257,23 +306,37 @@ def setlayer():
     print(state.objects)
     state.renderlayer = num
     state.renderdepth = state.level.depths[num]
+    state.parallax = state.level.parallaxes[state.renderlayer]
+    state.LoopBtn.config(variable = state.editloops[state.renderlayer])
+    if state.editloops[state.renderlayer]:
+        state.LoopBtn.select()
+    else:
+        state.LoopBtn.deselect()
     state.cam.depth = -(1-state.level.parallaxes[state.renderlayer])
     state.Depthswitch.delete(0,"end")
     state.Depthswitch.insert(0,state.renderdepth)
     state.Parallaxswitch.delete(0,"end")
     state.Parallaxswitch.insert(0,state.level.parallaxes[state.renderlayer])
-
+    
+def setlayerloop():
+    if state.editloops[state.renderlayer]:
+        state.editloops[state.renderlayer] = False
+    else:
+        state.editloops[state.renderlayer] = True
+        
 def setlayerdepth():
+    print(state.renderdepth)
     try:
-        num = int(state.Depthswitch.get())
-    except:
+        num = int(float(state.Depthswitch.get()))
+    except Exception as e:
         num = 0
     state.level.depths[state.renderlayer] = num
     state.renderdepth = num
+    print(state.renderdepth)
 
 def setlayerparallax():
     try:
-        num = int(state.Parallaxswitch.get())
+        num = float(state.Parallaxswitch.get())
     except:
         num = 0
     state.level.parallaxes[state.renderlayer] = num
@@ -400,7 +463,7 @@ def colordrawupdate():
                 for tile in range(state.groupselect[1][0]-state.groupselect[0][0]):
                     try:
                     #change block type if list entry is clicked
-                        state.colorval = state.tileselect.curselection()[0]
+                        state.colorval = state.pallateselect.curselection()[0]
                     except:
                         state.colorval = 0
                     try:
@@ -478,6 +541,9 @@ def rowaddupdate():
     if state.click[0] and not state.wasclick[0]:
         addheight(tile,rows)
         state.levelchanged = True
+    elif state.click[2] and not state.wasclick[2]:
+        removeheight(tile,rows)
+        state.levelchanged = True
 
 def coladdupdate():
     try:
@@ -492,7 +558,84 @@ def coladdupdate():
     if state.click[0] and not state.wasclick[0]:
         addwidth(tile,cols)
         state.levelchanged = True
-        
+    elif state.click[2] and not state.wasclick[2]:
+        removewidth(tile,cols)
+        state.levelchanged = True
+
+def animaddupdate():
+    tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
+    locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
+    pygame.draw.rect(state.display,(0,255,0),(locusupdate[0],locusupdate[1],state.tilesize,state.tilesize),10)
+    state.addanimindex = state.animselect.curselection()
+    if state.addanimindex != ():
+        state.addanim = state.animselect.get(state.addanimindex[0])
+    else:
+        state.addanim = "testanim1"
+    anim = state.tilesource["anims"][state.addanim]
+    #if new leftclick:
+    if state.click[0] and not state.wasclick[0]:
+        #if there's a conflicting animation on that tile, remove it.
+        for candidate in state.level.animationlist[state.renderlayer]:
+            if tile[0]==candidate[1] and tile[1]==candidate[2] and anim[0]==candidate[0]:
+                state.level.animationlist[state.renderlayer].remove(candidate)
+                break
+        #add animation to list
+        state.level.animationlist[state.renderlayer].append([anim[0],tile[0],tile[1],anim[1]])
+        for item in state.objects:
+            if type(item).__name__=="drawlayer":
+                if item.layernum==state.renderlayer:
+                    item.animlistrecalc()
+                    break
+        state.levelchanged = True
+    #if rightclick:
+    elif state.click[2] and not state.wasclick[2]:
+        for candidate in state.level.animationlist[state.renderlayer]:
+            if tile[0]==candidate[1] and tile[1]==candidate[2]:
+                state.level.animationlist[state.renderlayer].remove(candidate)
+                state.levelchanged = True
+        if state.levelchanged:
+            for item in state.objects:
+                if type(item).__name__=="drawlayer":
+                    if item.layernum==state.renderlayer:
+                        item.animlistrecalc()
+
+def itemaddupdate():
+    posadj = [state.mouse[0]+state.cam.pos[0]*state.parallaxmod,state.mouse[1]+state.cam.pos[1]*state.parallaxmod]
+    try:
+        extras = state.extrasget.get('1.0','end-1c').split('`')
+    except:
+        print("AH")
+        extras = ["TEST"]
+    #if new leftclick:
+    if state.click[0] and not state.wasclick[0]:
+        #place the selected object at that point
+        state.addobjindex = state.objselect.curselection()[0]
+        state.addobj = state.objselect.get(state.addobjindex)
+        if state.addobj != None:
+            added = getattr(objects,state.objectsource[state.addobj]["Type"])(posadj,state.renderdepth,state.parallax,state.addobj,extras)
+            state.editobjs.append([state.objectsource[state.addobj]["Type"],state.addobj,posadj,state.renderdepth,state.parallax,extras])
+            state.levelchanged = True
+    #if new rightclick:
+    elif state.click[2] and not state.wasclick[2]:
+        #for object on layer:
+        for obj in state.objects:
+            #if mouse is between object points and object is not a layer or a hitbox:
+            if obj.depth==state.renderdepth:
+                if type(obj).__name__ == "spawner" and obj.pos[0]-10<=posadj[0]<=obj.pos[0]+10 and obj.pos[1]-10<=posadj[1]<=obj.pos[1]+10:
+                    state.editobjs.remove([type(obj).__name__,obj.name,obj.pos,state.renderdepth,state.parallax,obj.extras])
+                    for child in obj.children:
+                        child.delete()
+                    obj.delete()
+                    state.levelchanged = True
+                elif type(obj).__name__ not in ["drawlayer","Hitbox"]  and (obj.left[0]<=posadj[0]<=obj.right[0] and obj.top[1]<=posadj[1]<=obj.bottom[1]):
+                    #destroy object and all it's children
+                    state.editobjs.remove([type(obj).__name__,obj.name,obj.pos,state.renderdepth,state.parallax,obj.extras])
+                    for child in obj.children:
+                        child.delete()
+                    obj.delete()
+                    state.levelchanged = True
+                    break
+
 def addheight(target, rowstoadd):
     #find longest row in level tileset
     longest = 0
@@ -512,6 +655,13 @@ def addheight(target, rowstoadd):
         if type(object)==level.drawlayer and object.layernum == state.renderlayer:
             object.calcsize()
 
+def removeheight(target,rowstocut):
+    #delete rows at and following the current one
+    del state.level.tilemap[state.renderlayer][target[1]:target[1]+rowstocut]
+    del state.level.pallatemap[state.renderlayer][target[1]:target[1]+rowstocut]
+    del state.level.spinmap[state.renderlayer][target[1]:target[1]+rowstocut]
+    del state.level.flipmap[state.renderlayer][target[1]:target[1]+rowstocut]
+
 def addwidth(target, colstoadd):
     #add values into all the rows
     for row in range(len(state.level.tilemap[state.renderlayer])):
@@ -524,18 +674,29 @@ def addwidth(target, colstoadd):
         if type(object)==level.drawlayer and object.layernum == state.renderlayer:
             object.calcsize()
 
+def removewidth(target,colstocut):
+    #delete tiles from every row at and following the current one
+    for row in range(len(state.level.tilemap[state.renderlayer])):
+        del state.level.tilemap[state.renderlayer][row][target[0]:target[0]+colstocut]
+        del state.level.pallatemap[state.renderlayer][row][target[0]:target[0]+colstocut]
+        del state.level.spinmap[state.renderlayer][row][target[0]:target[0]+colstocut]
+        del state.level.flipmap[state.renderlayer][row][target[0]:target[0]+colstocut]
+    
 def addLayer():
     num = state.renderlayer
     for item in state.objects:
         if type(item) == level.drawlayer:
             if item.layernum >= state.renderlayer:
                 item.layernum += 1
-    state.objects.append(level.drawlayer(state.level,state.renderdepth))
+    level.drawlayer(state.level,state.renderlayer)
     state.level.tilemap.insert(num,blank())
     state.level.pallatemap.insert(num,blank())
     state.level.spinmap.insert(num,blank())
     state.level.flipmap.insert(num,blank())
+    state.editloops.insert(num,False)
     state.level.depths.insert(num,state.renderdepth)
+    state.level.parallaxes.insert(num,state.renderdepth)
+    state.level.animationlist.insert(num,[])
     state.layercount += 1
     state.Layerswitch.config(to = state.layercount)
     #state.renderlayer = num+1

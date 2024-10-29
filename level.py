@@ -1,20 +1,21 @@
 """
 Filename: level.py
 Author(s): Taliesin Reese
-Verion: 1.8
-Date: 10/15/2024
+Verion: 1.13
+Date: 10/29/2024
 Purpose: Level class and functions for "MathWiz!"
 """
 import pygame
 import json
 import menufuncs
-import objects
+#import objects
 import GameData as state
 import random
 
 #this class defines the levels that the player will traverse.
 class level:
     def __init__(self,name):
+        self.name = name
         self.datafile = json.load(open(f"Leveldata/{name}.json"))
         self.depths = self.datafile["layerdepths"]
         self.parallaxes = self.datafile["layerparallaxes"]
@@ -24,13 +25,13 @@ class level:
         self.spinmap = self.datafile["rotates"]
         self.pallatemap = self.datafile["pallates"]
         self.objs = self.datafile["objects"]
-        self.animationlist = [[["tilemap",0,0,[[0,60],[1,60]]]]]
+        self.animationlist = self.datafile["animations"]
         for layer in range(len(self.tilemap)):
             drawlayer(self,layer)
         #spawn objects that are assigned to the level
-        objects.spawner([2220,1050],0,1,"ExponentQuestionSpawner",[])
         for item in self.objs:
-            getattr(objects,item[0])(item[2],item[3],item[4],item[1],item[5])
+            #getattr(objects,item[0])(item[2],item[3],item[4],item[1],item[5])
+            state.maker.make_obj(item[0],(item[2],item[3],item[4],item[1],item[5]))
             if state.gamemode == "edit":
                 state.editobjs.append(item)
         #state.player = objects.Player([50,50],(0), "MathWiz")
@@ -42,15 +43,8 @@ class drawlayer:
         self.level = level
         self.layernum = layernum
         self.calcsize()
-        if len(self.level.animationlist)-1 == self.layernum:
-            self.animationlist = self.level.animationlist[self.layernum]
-        else:
-            self.animationlist = []
-        self.animtimers = []
-        self.animframes = []
-        for sequence in self.animationlist:
-            self.animtimers.append(0)
-            self.animframes.append(0)
+
+        self.animlistrecalc()
             
         self.brush = pygame.Surface((state.tilesize,state.tilesize)).convert()
         self.brush.fill(state.invis)
@@ -109,10 +103,10 @@ class drawlayer:
         if tilenum != self.brushval or pallatenum != self.brushpal:
             self.brush.fill(state.invis)
             self.brush.blit(state.tilesheet, (tileinfo[3][0],tileinfo[3][1]), (tileinfo[1][0],tileinfo[1][1],tileinfo[2][0],tileinfo[2][1]))
-            """
-            #this is a temporary rendering system. It should ultimately be replaced with graphics pulled from files based on tilenum.
+            
+            """#this is a temporary rendering system. It should ultimately be replaced with graphics pulled from files based on tilenum.
             #also, only changes the brush when the tilenum is different. This hopefully saves on execution time.
-            FOR DEBUGGING PURPOSES
+            #FOR DEBUGGING PURPOSES
             if tilenum == 1:
                 self.brush.fill((0,0,255))
             elif tilenum == 2:
@@ -122,8 +116,8 @@ class drawlayer:
             elif tilenum == 4:
                 pygame.draw.polygon(self.brush, (255,255,0), ([0,state.tilesize],[0,state.tilesize/2],[state.tilesize,0],[state.tilesize,state.tilesize]))
             elif tilenum == 5:
-                pygame.draw.polygon(self.brush, (255,0,0), ([0,state.tilesize],[0,state.tilesize/2],[state.tilesize,state.tilesize/2],[state.tilesize,state.tilesize]))
-                """
+                pygame.draw.polygon(self.brush, (255,0,0), ([0,state.tilesize],[0,state.tilesize/2],[state.tilesize,state.tilesize/2],[state.tilesize,state.tilesize]))"""
+                
             self.brushval = tilenum
             #set pallate value to tile's default value
             self.brushpal = tileinfo[4]
@@ -148,19 +142,30 @@ class drawlayer:
         flipval = self.level.flipmap[self.layernum][row][tile]
         if flipval == 1:
             self.flipx = True
+            self.flipy = False
         elif flipval == 2:
             self.flipx = True
             self.flipy = True
         elif flipval == 3:
             self.flipy = True
+            self.flipx = False
         else:
             self.flipx = False
             self.flipy = False
         #render layer
         self.workcanvas.blit(pygame.transform.flip(pygame.transform.rotate(self.brush,self.rotate),self.flipx,self.flipy),(tile*state.tilesize,row*state.tilesize))
-        
+
+    def animlistrecalc(self):
+        self.animationlist = self.level.animationlist[self.layernum]
+        self.animtimers = []
+        self.animframes = []
+        for sequence in self.animationlist:
+            self.animtimers.append(0)
+            self.animframes.append(0)
+            
     def update(self):
         #update tile animations
+        #print(self.animationlist)
         for timer in range(len(self.animtimers)):
             self.animtimers[timer] += state.deltatime
         for sequencenum in range(len(self.animationlist)):
@@ -179,7 +184,7 @@ class drawlayer:
                     tileinfo = state.tilesource["tiles"][str(tilenum)]
                     self.tileupdate(row,tile,tileinfo,tilenum,pallatenum)
             if state.gamemode == "edit":
-                col = int(255*self.animtimers[sequencenum]/60)
+                col = int(255*self.animtimers[sequencenum]/self.animationlist[sequencenum][3][self.animframes[sequencenum]][1])
                 row = self.animationlist[sequencenum][2]
                 tile = self.animationlist[sequencenum][1]
                 pygame.draw.rect(self.workcanvas, (0,col,col,50), (tile*state.tilesize,row*state.tilesize,state.tilesize,state.tilesize))

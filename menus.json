@@ -1,9 +1,10 @@
 {
     "test":[
-        [[1100,500],[2000,500], 0, "Load Menu 2", "loadmenu", ["test2"]],
-        [[1,1],[2000,500], 0, "Load Test Level", "loadlevel", ["looptest"]]
+        [[0,0],[3600,3600],[0,0,1200,1200,0,0,1200,1200],0,"","nothing",["nothing"]],
+        [[800,2500],[2000,500], null, 1, "Start the Adventure!", "loadlevel", ["expotest"]],
+        [[800,3000],[2000,500], null, 1, "Load Menu 2", "loadmenu", ["test2"]]
     ],
     "test2":[
-        [[1100,500],[2000,500], 0, "Load Menu 1", "loadmenu", ["test"]]
+        [[800,2500],[2000,500], null, 0, "Why tho?", "loadmenu", ["test"]]
     ]
 }

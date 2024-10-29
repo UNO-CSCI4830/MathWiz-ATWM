@@ -1,12 +1,13 @@
 """
 Filename: moves.py
 Author(s): Taliesin Reese
-Version: 1.3
-Date: 10/13/2024
+Version: 1.6
+Date: 10/29/2024
 Purpose: moves to be used in "MathWiz!"
 """
 import GameData as state
 import pygame
+import menufuncs
 
 #set vertical velocity to the jumpspeed
 def jump(caller, height):
@@ -28,6 +29,19 @@ def setforce(caller,force):
         caller.speed[0]=force[0]
     if force[1] != None:
         caller.speed[1]=force[1]
+    
+def cyclepower(caller,indexval):
+    #cannot switch while firing
+    if not state.keys[pygame.K_f]:
+        if caller.weap in caller.abilities:
+            #get new power
+            newindex = caller.abilities.index(caller.weap)+indexval
+            if newindex > len(caller.abilities)-1:
+                newindex = 0
+            caller.weap = caller.abilities[newindex]
+        else:
+            caller.weap = "dirtycheaterpower"
+        caller.pallate = caller.weap
         
 def addforce(caller,force):
     caller.speed[0]+=force[0]*state.deltatime
@@ -39,10 +53,32 @@ def collapsestart(caller,Nix):
 def delete(caller,burner):
     caller.delete()
 
-def hitboxon(caller,hitboxname):
-    caller.hitboxes[hitboxname].active = True
+def loadnextstate(caller,data):
+    getattr(menufuncs,f"load{data[0]}")(data[1])
+
+def hitboxon(caller,data):
+    state.maker.make_obj("Hitbox",data)
+
+def firebullet(caller,data):
+    state.maker.make_obj("Projectile",data)
+
+def stun(caller,data):
+    caller.stun = True
+    caller.storepal = caller.pallate
+    caller.pallate = "Stun"
     
-def hitboxoff(caller,hitboxname):
-    caller.hitboxes[hitboxname].active = False
-    caller.hitboxes[hitboxname].hitobjects = []
+def destun(caller,data):
+    caller.stun = False
+    caller.pallate = caller.storepal
+
+def weapDefault(caller,Burner):
+    caller.requestanim = True
+    caller.animname = "Moonwalk"
+    caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,[[240,240],"dmg",10,30,caller]]],[None,None,True]])
+
+def weapMMissile(caller,Burner):
+    #caller.actionqueue.append([0,["jump",10],["keys",pygame.K_f,False]])
+    caller.actionqueue.append([5,["firebullet",[[120,0],caller.depth,caller.parallax,"Missile",[caller]]],[None,None,True]])
     
+def weapdirtycheaterpower(caller,Burner):
+    print("I LOL'D")
