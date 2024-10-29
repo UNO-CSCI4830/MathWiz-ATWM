@@ -54,6 +54,7 @@ class character(gameObject):
         self.grounded = True
         self.actiontimer = 0
         self.name = name
+        self.health = 100 
         self.size = state.objectsource[name]["Sizes"]["Default"]
         #sprite used to show player. Replace these calls with animation frame draws
         self.sprite = pygame.Surface(self.size)
@@ -569,5 +570,11 @@ class Player(character):
             self.actionqueue.append([65,["hitboxoff","testpunch"],[None,None,True]])
 
     def damagetake(self,dmg):
+        self.health -= dmg
         print(f"{dmg} damage-man, that really would've hurt if pain had been invented!")
+
+    def game_over(self):
+        if self.health == 0:
+            #Game over
+            pass
             
