@@ -1,0 +1,3 @@
+{
+    "Patrol":[[0,["walk",20],["time",30,null]],[30,["walk",-20],["time",30,null]]]
+}

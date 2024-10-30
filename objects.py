@@ -1,7 +1,7 @@
 """
 Filename: objects.py
-Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold, Zaid Kakish, Logan Jenison
-Version: 1.14
+Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold, Zaid Kakish, Logan Jenison, John
+Version: 1.15
 Date: 10/29/2024
 Purpose: object classes for "MathWiz!"
 """
@@ -12,6 +12,7 @@ import tilecollisions
 import moves
 import random
 from functools import partial
+from copy import deepcopy
 
 #basic class to build other objects onto
 class gameObject:
@@ -52,7 +53,11 @@ class character(gameObject):
         self.grounded = True
         self.actiontimer = 0
         self.name = name
-        self.size = state.objectsource[name]["Sizes"]["Default"]
+        #get object info: Grapics, animations, etc.
+        self.infoname = state.objectsource[name]["Info"]
+        self.info = state.infosource[self.infoname]
+        
+        self.size = self.info["Sizes"]["Default"]
         #sprite used to show player. Replace these calls with animation frame draws
         self.sprite = pygame.Surface(self.size)
         self.colorbrush = pygame.Surface(self.size)
@@ -125,6 +130,11 @@ class character(gameObject):
                     case "keys":
                         if state.keys[action[2][1]] == action[2][2]:
                             self.actionqueue.remove(action)
+                    case "time":
+                        if action[2][1] <= 0:
+                            self.actionqueue.remove(action)
+                        else:
+                            action[2][1] -= state.deltatime
                     #remove the action immediately if the source isn't found
                     case _:
                         self.actionqueue.remove(action)
@@ -153,7 +163,7 @@ class character(gameObject):
     def animationupdate(self):
         self.sprite.fill(state.invis)
         self.animtime += state.deltatime
-        anim = self.data["Animations"][self.animname]
+        anim = self.info["Animations"][self.animname]
         if anim != []:
             if self.animtime >= anim[self.animframe][3]:
                 self.animframe += 1
@@ -162,15 +172,15 @@ class character(gameObject):
                     self.animframe = 0
                     self.requestanim = False
             #draw the sprite
-            self.sprite.blit(state.spritesheet, self.data["Frames"][anim[self.animframe][0]][4:],(self.data["Frames"][anim[self.animframe][0]][:4]))
+            self.sprite.blit(state.spritesheet, self.info["Frames"][anim[self.animframe][0]][4:],(self.info["Frames"][anim[self.animframe][0]][:4]))
             self.sprite = pygame.transform.rotate(pygame.transform.flip(self.sprite,anim[self.animframe][1][0],anim[self.animframe][1][1]),anim[self.animframe][2])
             
             #get the sprite drawn with the correct palatte
             #optimize this later
             if self.pallate != "Default":
-                for color in range(len(state.objectsource[self.name]["Pallates"][self.pallate])):
-                    self.colorbrush.fill(state.objectsource[self.name]["Pallates"][self.pallate][color])
-                    self.sprite.set_colorkey(state.objectsource[self.name]["Pallates"]["Default"][color])
+                for color in range(len(state.infosource[self.infoname]["Pallates"][self.pallate])):
+                    self.colorbrush.fill(state.infosource[self.infoname]["Pallates"][self.pallate][color])
+                    self.sprite.set_colorkey(state.infosource[self.infoname]["Pallates"]["Default"][color])
                     self.colorbrush.blit(self.sprite,(0,0))
                     self.sprite.blit(self.colorbrush,(0,0))
                 self.sprite.set_colorkey(state.invis)
@@ -305,11 +315,11 @@ class character(gameObject):
         #this check is exclusive to the bottom point. If the distance to the ground is less than the current forwards momentum, snap player to the ground.
         else:
             dist = 1
-            while dist < abs(self.speed[0]):
+            while dist <= 2*abs(self.speed[0]):
                 if self.pointcollide([self.bottom[0],self.bottom[1]+dist]) != True:
                     dist += 1
                 else:
-                    if dist < abs(self.speed[0]):
+                    if dist <= 2*abs(self.speed[0]):
                         self.pos[1] += dist-1
                         self.grounded = True
                         self.getpoints()
@@ -350,11 +360,12 @@ class character(gameObject):
                 dist += 1
 
     def objcollide(self):
-        for thing in state.objects:
-            if type(thing).__name__ != "drawlayer" and thing != self:
-                if self.left[0]<=thing.left[0]<=self.right[0] or self.left[0]<=thing.right[0]<=self.right[0] or thing.left[0]<=self.left[0]<=thing.right[0] or thing.left[0]<=self.right[0]<=thing.right[0] or self.left[0]>=thing.left[0]>=self.right[0] or self.left[0]>=thing.right[0]>=self.right[0] or thing.left[0]>=self.left[0]>=thing.right[0] or thing.left[0]>=self.right[0]>=thing.right[0]:
-                    if self.top[1]<=thing.top[1]<=self.bottom[1] or self.top[1]<=thing.bottom[1]<=self.bottom[1] or thing.top[1]<=self.top[1]<=thing.bottom[1] or thing.top[1]<=self.bottom[1]<=thing.bottom[1] or self.top[1]>=thing.top[1]>=self.bottom[1] or self.top[1]>=thing.bottom[1]>=self.bottom[1] or thing.top[1]>=self.top[1]>=thing.bottom[1] or thing.top[1]>=self.bottom[1]>=thing.bottom[1]:
-                        thing.collidefunction(self)
+        if self in state. objects:
+            for thing in state.objects:
+                if type(thing).__name__ != "drawlayer" and thing != self:
+                    if self.left[0]<=thing.left[0]<=self.right[0] or self.left[0]<=thing.right[0]<=self.right[0] or thing.left[0]<=self.left[0]<=thing.right[0] or thing.left[0]<=self.right[0]<=thing.right[0] or self.left[0]>=thing.left[0]>=self.right[0] or self.left[0]>=thing.right[0]>=self.right[0] or thing.left[0]>=self.left[0]>=thing.right[0] or thing.left[0]>=self.right[0]>=thing.right[0]:
+                        if self.top[1]<=thing.top[1]<=self.bottom[1] or self.top[1]<=thing.bottom[1]<=self.bottom[1] or thing.top[1]<=self.top[1]<=thing.bottom[1] or thing.top[1]<=self.bottom[1]<=thing.bottom[1] or self.top[1]>=thing.top[1]>=self.bottom[1] or self.top[1]>=thing.bottom[1]>=self.bottom[1] or thing.top[1]>=self.top[1]>=thing.bottom[1] or thing.top[1]>=self.bottom[1]>=thing.bottom[1]:
+                            thing.collidefunction(self)
     
     def collidefunction(self,trigger):
         pass
@@ -375,7 +386,7 @@ class spawner(gameObject):
         super().__init__(locus,depth,parallax,extras)
         self.name = name
         self.data = state.objectsource[name]
-        self.size = self.data.get("Sizes")["Default"]
+        self.size = [0,0]
         character.getpoints(self)
         
         self.delcond = self.data.get("DeleteCondition")
@@ -591,7 +602,8 @@ class Player(character):
         self.health = 100
         self.allegience = "Hero"
         #make the camera focus on this object
-        state.cam.focusobj = self
+        if state.gamemode != "edit":
+            state.cam.focusobj = self
         #self.sprite.fill((255,0,0))
         #pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
     #this update is the same as the one for generic characters, but it allows the player to control it.
@@ -671,4 +683,80 @@ class Player(character):
         self.actionqueue.append([30,["stun",None],[None,None,True]])
         self.animname = "Fall"
         self.requestanim = True
+
+class Enemy(character):
+    def __init__(self,locus,depth,parallax,name,extras):
+        super().__init__(locus,depth,parallax,name,extras)
+        if extras != [""]:
+            self.behavior = state.aisource[extras[0]]
+        else:
+            self.behavior = [[0,["nothing","nothing"],[None,None,False]]]
+        self.health = 100
+        self.gravity = 50
+        self.grounded = False
+        self.pallate = "Shadow"
+        #find player to target
+        for obj in state.objects:
+            if "Player" in str(obj):
+                self.target = obj
+        # pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
+
+    def update(self):
+        self.lastanim = self.animname
+        self.lastpos = self.pos.copy()
+        self.lastbottom = self.bottom.copy()
+        self.lasttop = self.top.copy()
+        self.lastleft = self.left.copy()
+        self.lastright = self.right.copy()
+        self.lastdir = self.direction
+        self.physics()
+        self.actionupdate()
+        # the idea here for later on is enemy names will be tied to a different ai procedure
+        # for instance, here the "test-enemy" is the "follow" AI, but a "crab" enemy could also have "follow"
+        # at least, it was the idea but it seems each enemy has to be a different object in objects.json. oh well
+        if not self.stun:
+            if self.actionqueue == []:
+                self.actionqueue = deepcopy(self.behavior)
+        """AI = self.data.get("AI")["Default"]
+        if AI == "follow":
+            self.physics()
+            self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
+            if (self.target.pos[0] < self.pos[0]):
+                self.movement = [-5*state.deltatime,self.speed[1]*state.deltatime]
+            elif (self.target.pos[0] > self.pos[0]):
+                self.movement = [5*state.deltatime,self.speed[1]*state.deltatime]
+            else:
+                self.movement = [0,self.speed[1]*state.deltatime]
+        elif AI == "float":
+            if(pygame.time.get_ticks() % 2000 < 1000):
+                self.movement[1] = -5
+            else:
+                self.movement[1] = 5"""
+        # also need to make the hitbox constant
+        self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
+        while self.movement != [0,0]:
+            self.move()
+            self.collide()
+            self.objcollide()
+        self.objcollide()
+        self.collide()
+        for item in self.children:
+            item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
+            item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
+        self.animationpick()
+        self.animationupdate()
+        self.render()
+        
+    def collidefunction(self,trigger):
+        if trigger.allegience != self.allegience:
+            trigger.damagetake(10)
+            
+    # eventually add a check statement like "hp -= dmg. if hp < 0 then Die"
+    def damagetake(self,dmg):
+        self.actionqueue = []
+        self.actionqueue.append([0,["stun",dmg],[None,None,True]])
+        self.actionqueue.append([30,["destun",dmg],[None,None,True]])
+        self.health -= dmg
+        if self.health <= 0:
+            self.delete()
             

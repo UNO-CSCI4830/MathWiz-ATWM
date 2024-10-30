@@ -22,15 +22,17 @@ class cam:
         #set position so focus object is centered.
         self.pos = (self.focus[0]-state.screensize[0]/2, self.focus[1]-state.screensize[1]/2)
         #do not pan the camera if doing so would expose void.
-        for item in state.objects:
-            if type(item).__name__ == "drawlayer":
-                if item.loop == False:
-                    parallaxmod = item.parallax-self.depth
-                    if self.pos[0]*parallaxmod < 0:
-                        self.pos = (0,self.pos[1])
-                    elif (self.pos[0]+state.screensize[0])*parallaxmod > item.width:
-                        self.pos = (item.width-state.screensize[0],self.pos[1])
-                    if self.pos[1]*parallaxmod < 0:
-                        self.pos = (self.pos[0],0)
-                    elif (self.pos[1]+state.screensize[1])*parallaxmod > item.height:
-                        self.pos = (self.pos[0],item.height-state.screensize[1])
+        if state.gamemode != "edit":
+            for item in state.objects:
+                if type(item).__name__ == "drawlayer":
+                    if item.loop == False:
+                        parallaxmod = item.parallax-self.depth
+                        if self.pos[0]*parallaxmod < 0:
+                            self.pos = (0,self.pos[1])
+                        elif (self.pos[0]+state.screensize[0])*parallaxmod > item.width:
+                            self.pos = (item.width-state.screensize[0],self.pos[1])
+                        if self.pos[1]*parallaxmod < 0:
+                            self.pos = (self.pos[0],0)
+                        elif (self.pos[1]+state.screensize[1])*parallaxmod > item.height:
+                            self.pos = (self.pos[0],item.height-state.screensize[1])
+

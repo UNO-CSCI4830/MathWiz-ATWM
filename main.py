@@ -1,8 +1,8 @@
 """
 Filename: main.py
 Author(s): Taliesin Reese
-Verion: 1.7
-Date: 10/28/2024
+Verion: 1.8
+Date: 10/29/2024
 Purpose: Core file for "MathWiz!"
 """
 #premade library imports
@@ -41,12 +41,16 @@ state.font = pygame.font.SysFont("Lucida Console",75)
 clock = pygame.time.Clock()
 
 #load assets
-state.tilesource = json.load(open("tiles.json"))
 state.tilesheet = pygame.image.load("Assets/images/tiles.png").convert()
 state.spritesheet = pygame.image.load("Assets/images/CharSprites.png").convert()
-state.objectsource = json.load(open("objects.json"))
-state.cutscenesource = json.load(open("cutscenes.json"))
 state.menusheet = pygame.image.load("Assets/images/menuassets.png").convert()
+
+state.objectsource = json.load(open("objects.json"))
+state.aisource = json.load(open("behaviours.json"))
+state.infosource = json.load(open("entityinfo.json"))
+
+state.tilesource = json.load(open("tiles.json"))
+state.cutscenesource = json.load(open("cutscenes.json"))
 
 #initialize game stuffs
 state.gamemode = "play"
