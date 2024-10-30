@@ -75,7 +75,7 @@ class drawlayer:
     def render(self):
         self.workcanvas.fill((0,0,0))
         #iterate through every row of tiles, and every tile.
-        for row in range(len(self.level.tilemap[0])):
+        for row in range(len(self.level.tilemap[self.layernum])):
             for tile in range(len(self.level.tilemap[self.layernum][row])):
                 #get the number of the tile in that slot, and information about its collision data
                 tilenum = self.level.tilemap[self.layernum][row][tile]
