@@ -78,11 +78,11 @@ def nothing(caller, nothing):
 def weapDefault(caller,Burner):
     caller.requestanim = True
     caller.animname = "Moonwalk"
-    caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,[[240,240],"dmg",10,30,caller]]],[None,None,True]])
+    caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,caller.layer,[[240,240],"dmg",10,30,caller]]],[None,None,True]])
 
 def weapMMissile(caller,Burner):
     #caller.actionqueue.append([0,["jump",10],["keys",pygame.K_f,False]])
-    caller.actionqueue.append([5,["firebullet",[[120,0],caller.depth,caller.parallax,"Missile",[caller]]],[None,None,True]])
+    caller.actionqueue.append([5,["firebullet",[[120,0],caller.depth,caller.parallax,"Missile",caller.layer,[caller]]],[None,None,True]])
     
 def weapdirtycheaterpower(caller,Burner):
     print("I LOL'D")

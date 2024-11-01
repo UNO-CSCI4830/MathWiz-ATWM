@@ -16,13 +16,14 @@ from copy import deepcopy
 
 #basic class to build other objects onto
 class gameObject:
-    def __init__(self, locus, depth, parallax, extras):
+    def __init__(self, locus, depth, parallax,layer,extras):
         self.children = []
         self.extras = extras
         self.pos = locus
         self.lastpos = locus
         self.depth = depth
         self.parallax = parallax
+        self.layer = layer
         self.speed = [0,0]
         #add to list of objects that are updated every frame
         state.objects.append(self)
@@ -39,10 +40,10 @@ class gameObject:
 
 #slightly less basic class to build characters on--players, enemies, moving platforms, bosses, etc.
 class character(gameObject):
-    def __init__(self,locus,depth,parallax,name,extras):
+    def __init__(self,locus,depth,parallax,name, layer, extras):
         #extra data used for individual object types
         self.data = state.objectsource[name]
-        super().__init__(locus,depth,parallax,extras)
+        super().__init__(locus,depth,parallax, layer, extras)
         #extra variables handle things unique to objects with more logic: movement, gravity, grounded state, etc.
         self.movement = [0,0]
         self.direction = 1
@@ -196,7 +197,7 @@ class character(gameObject):
     def pointcollide(self, point):
         #find layers to do collision on:
         for item in state.objects:
-            if type(item).__name__ == "drawlayer" and item.parallax == self.parallax:
+            if type(item).__name__ == "drawlayer" and item.layernum == self.layer:
                 #get the tile that the point is positioned on
                 tile = [int(point[0]//state.tilesize),int(point[1]//state.tilesize)]
                 #get values from said tile
@@ -362,7 +363,7 @@ class character(gameObject):
     def objcollide(self):
         if self in state. objects:
             for thing in state.objects:
-                if type(thing).__name__ != "drawlayer" and thing != self:
+                if type(thing).__name__ != "drawlayer" and thing != self and thing.layer == self.layer:
                     if self.left[0]<=thing.left[0]<=self.right[0] or self.left[0]<=thing.right[0]<=self.right[0] or thing.left[0]<=self.left[0]<=thing.right[0] or thing.left[0]<=self.right[0]<=thing.right[0] or self.left[0]>=thing.left[0]>=self.right[0] or self.left[0]>=thing.right[0]>=self.right[0] or thing.left[0]>=self.left[0]>=thing.right[0] or thing.left[0]>=self.right[0]>=thing.right[0]:
                         if self.top[1]<=thing.top[1]<=self.bottom[1] or self.top[1]<=thing.bottom[1]<=self.bottom[1] or thing.top[1]<=self.top[1]<=thing.bottom[1] or thing.top[1]<=self.bottom[1]<=thing.bottom[1] or self.top[1]>=thing.top[1]>=self.bottom[1] or self.top[1]>=thing.bottom[1]>=self.bottom[1] or thing.top[1]>=self.top[1]>=thing.bottom[1] or thing.top[1]>=self.bottom[1]>=thing.bottom[1]:
                             thing.collidefunction(self)
@@ -382,8 +383,8 @@ class character(gameObject):
             state.display.blit(pygame.transform.flip(self.sprite,True,False),[self.pos[0]-state.cam.pos[0],self.pos[1]-state.cam.pos[1]])
 
 class spawner(gameObject):
-    def __init__(self,locus,depth,parallax,name,extras):
-        super().__init__(locus,depth,parallax,extras)
+    def __init__(self,locus,depth,parallax,name, layer, extras):
+        super().__init__(locus,depth,parallax, layer, extras)
         self.name = name
         self.data = state.objectsource[name]
         self.size = [0,0]
@@ -442,8 +443,8 @@ class spawner(gameObject):
                 self.spawnedobjs.append(globals()[item[0]]([item[2][0]+self.pos[0],item[2][1]+self.pos[1]],item[3],item[4],item[1],item[5]))
 
 class Sign(character):
-    def __init__(self,locus,depth,parallax,name,extras):
-        super().__init__(locus,depth,parallax,name,extras)
+    def __init__(self,locus,depth,parallax,name, layer, extras):
+        super().__init__(locus,depth,parallax,name, layer, extras)
         self.text = extras[0]
         #self.sprite.fill((100,100,0))
     def update(self):
@@ -453,8 +454,8 @@ class Sign(character):
     
         
 class Platform(character):
-    def __init__(self,locus,depth,parallax,name,extras):
-        super().__init__(locus,depth,parallax,name,extras)
+    def __init__(self,locus,depth,parallax,name, layer, extras):
+        super().__init__(locus,depth,parallax,name, layer, extras)
         self.gravity = 0
         #self.sprite.fill((100,0,0))
         #pygame.draw.rect(self.sprite,(255,0,0),(0,0,self.size[0],20))
@@ -474,8 +475,8 @@ class Platform(character):
             trigger.pos[1] = self.top[1] - trigger.size[1]
 
 class CollapsingPlatform(Platform):
-    def __init__(self,locus,depth,parallax,name,extras):
-        super().__init__(locus,depth,parallax,name,extras)
+    def __init__(self,locus,depth,parallax,name, layer, extras):
+        super().__init__(locus,depth,parallax,name, layer, extras)
         self.collapsing = False
     
     def update(self):
@@ -501,14 +502,14 @@ class CollapsingPlatform(Platform):
             self.actionqueue.append([60,["delete",None],[None,None,True]])
             
 class Hitbox(gameObject):
-    def __init__(self,locus,depth,parallax,extras):
+    def __init__(self,locus,depth,parallax, layer, extras):
         self.offset = locus
         self.size = extras[0]
         self.mode = extras[1]
         self.amt = extras[2]
         self.lifespan = extras[3]
         self.parent = extras[4]
-        super().__init__([self.parent.pos[0]+self.offset[0],self.parent.pos[1]+self.offset[1]],depth,parallax,extras)
+        super().__init__([self.parent.pos[0]+self.offset[0],self.parent.pos[1]+self.offset[1]],depth,parallax, layer, extras)
         self.hitobjects = []
         self.parent.children.append(self)
         self.getpoints()
@@ -543,8 +544,8 @@ class Hitbox(gameObject):
             self.hitobjects.append(trigger)
             
 class collectGoal(character):
-    def __init__(self,locus,depth,parallax,name,extras):
-        super().__init__(locus,depth,parallax,name,extras)
+    def __init__(self,locus,depth,parallax,name, layer, extras):
+        super().__init__(locus,depth,parallax,name, layer, extras)
         self.sprite.fill((0,0,100))
         self.gotten = False
     def collidefunction(self,trigger):
@@ -557,8 +558,8 @@ class collectGoal(character):
             self.actionqueue.append([120,["loadnextstate",["cutscene","outro"]],[None,None,True]])
 
 class Projectile(character):
-    def __init__(self,locus,depth,parallax,name,extras):
-        super().__init__([extras[0].pos[0]+locus[0],extras[0].pos[1]+locus[1]],depth,parallax,name,extras)
+    def __init__(self,locus,depth,parallax,name, layer, extras):
+        super().__init__([extras[0].pos[0]+locus[0],extras[0].pos[1]+locus[1]],depth,parallax,name,layer,extras)
         
         self.gravity = 0
         self.allegience = extras[0].allegience
@@ -595,8 +596,8 @@ class Projectile(character):
                 self.delete()
             
 class Player(character):
-    def __init__(self,locus,depth,parallax,name,extras):
-        super().__init__(locus,depth,parallax,name,extras)
+    def __init__(self,locus,depth,parallax,name,layer,extras):
+        super().__init__(locus,depth,parallax,name,layer,extras)
         self.abilities = ["Default","MMissile"]
         self.weap = "Default"
         self.health = 100
@@ -685,8 +686,8 @@ class Player(character):
         self.requestanim = True
 
 class Enemy(character):
-    def __init__(self,locus,depth,parallax,name,extras):
-        super().__init__(locus,depth,parallax,name,extras)
+    def __init__(self,locus,depth,parallax,name,layer,extras):
+        super().__init__(locus,depth,parallax,name,layer,extras)
         if extras != [""]:
             self.behavior = state.aisource[extras[0]]
         else:
@@ -717,21 +718,6 @@ class Enemy(character):
         if not self.stun:
             if self.actionqueue == []:
                 self.actionqueue = deepcopy(self.behavior)
-        """AI = self.data.get("AI")["Default"]
-        if AI == "follow":
-            self.physics()
-            self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
-            if (self.target.pos[0] < self.pos[0]):
-                self.movement = [-5*state.deltatime,self.speed[1]*state.deltatime]
-            elif (self.target.pos[0] > self.pos[0]):
-                self.movement = [5*state.deltatime,self.speed[1]*state.deltatime]
-            else:
-                self.movement = [0,self.speed[1]*state.deltatime]
-        elif AI == "float":
-            if(pygame.time.get_ticks() % 2000 < 1000):
-                self.movement[1] = -5
-            else:
-                self.movement[1] = 5"""
         # also need to make the hitbox constant
         self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
         while self.movement != [0,0]:

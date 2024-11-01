@@ -76,7 +76,7 @@ def main():
                     item.update()
                     state.parallaxmod = item.parallax-state.cam.depth
             else:
-                if item.depth == state.renderdepth:
+                if item.layer == state.renderlayer:
                     item.render()
         #reset the changed status for upcoming loops
         state.levelchanged = False
@@ -608,8 +608,8 @@ def itemaddupdate():
         state.addobjindex = state.objselect.curselection()[0]
         state.addobj = state.objselect.get(state.addobjindex)
         if state.addobj != None:
-            added = getattr(objects,state.objectsource[state.addobj]["Type"])(posadj,state.renderdepth,state.parallax,state.addobj,extras)
-            state.editobjs.append([state.objectsource[state.addobj]["Type"],state.addobj,posadj,state.renderdepth,state.parallax,extras])
+            added = getattr(objects,state.objectsource[state.addobj]["Type"])(posadj,state.renderdepth,state.parallax,state.addobj,state.renderlayer,extras)
+            state.editobjs.append([state.objectsource[state.addobj]["Type"],state.addobj,posadj,state.renderdepth,state.parallax,state.renderlayer,extras])
             state.levelchanged = True
     #if new rightclick:
     elif state.click[2] and not state.wasclick[2]:
@@ -618,7 +618,7 @@ def itemaddupdate():
             #if mouse is between object points and object is not a layer or a hitbox:
             if obj.depth==state.renderdepth:
                 if type(obj).__name__ == "spawner" and obj.pos[0]-10<=posadj[0]<=obj.pos[0]+10 and obj.pos[1]-10<=posadj[1]<=obj.pos[1]+10:
-                    state.editobjs.remove([type(obj).__name__,obj.name,obj.pos,state.renderdepth,state.parallax,obj.extras])
+                    state.editobjs.remove([type(obj).__name__,obj.name,obj.pos,state.renderdepth,state.parallax,state.renderlayer,obj.extras])
                     for child in obj.children:
                         child.delete()
                     obj.delete()
@@ -641,7 +641,7 @@ def addheight(target, rowstoadd):
     #add rows at length of longest row at the point listed
     add = []
     for zero in range(longest):
-        add.append(1)
+        add.append(0)
     for row in range(rowstoadd):
         state.level.tilemap[state.renderlayer].insert(target[1],add.copy())
         state.level.pallatemap[state.renderlayer].insert(target[1],add.copy())
@@ -662,10 +662,10 @@ def addwidth(target, colstoadd):
     #add values into all the rows
     for row in range(len(state.level.tilemap[state.renderlayer])):
         for iteration in range(colstoadd):
-            state.level.tilemap[state.renderlayer][row].insert(target[0],1)
-            state.level.pallatemap[state.renderlayer][row].insert(target[0],1)
-            state.level.spinmap[state.renderlayer][row].insert(target[0],1)
-            state.level.flipmap[state.renderlayer][row].insert(target[0],1)
+            state.level.tilemap[state.renderlayer][row].insert(target[0],0)
+            state.level.pallatemap[state.renderlayer][row].insert(target[0],0)
+            state.level.spinmap[state.renderlayer][row].insert(target[0],0)
+            state.level.flipmap[state.renderlayer][row].insert(target[0],0)
     for object in state.objects:
         if type(object)==level.drawlayer and object.layernum == state.renderlayer:
             object.calcsize()

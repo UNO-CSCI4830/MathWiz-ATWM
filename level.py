@@ -31,7 +31,10 @@ class level:
         #spawn objects that are assigned to the level
         for item in self.objs:
             #getattr(objects,item[0])(item[2],item[3],item[4],item[1],item[5])
-            state.maker.make_obj(item[0],(item[2],item[3],item[4],item[1],item[5]))
+            if len(item) > 5:
+                state.maker.make_obj(item[0],(item[2],item[3],item[4],item[1],item[5],item[6]))
+            else:
+                state.maker.make_obj(item[0],(item[2],item[3],item[4],item[1],item[5]))
             if state.gamemode == "edit":
                 state.editobjs.append(item)
         #state.player = objects.Player([50,50],(0), "MathWiz")
