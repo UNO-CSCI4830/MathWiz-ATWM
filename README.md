@@ -8,6 +8,12 @@ _**The MathWiz!** The very son of the two wizards must step up to defeat each of
 _Well, I'm not telling. You'll have to play the game to find that out._
 
 
+## To run:
+1. Download all files
+2. Run main.py in your python interpreter of choice
+3. To change levels in the demo, go into the menus.json, find the name of the level currently being loaded by the menu buttons, and change it to the name of the level you wish to load
+
+
 ## Controls:
 
 MOVE LEFT: A
