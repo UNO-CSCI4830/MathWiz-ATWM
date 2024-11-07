@@ -2,7 +2,7 @@
 Filename: moves.py
 Author(s): Taliesin Reese
 Version: 1.7
-Date: 10/29/2024
+Date: 11/06/2024
 Purpose: moves to be used in "MathWiz!"
 """
 import GameData as state
@@ -75,6 +75,7 @@ def destun(caller,data):
 def nothing(caller, nothing):
     pass
 
+#attacks
 def weapDefault(caller,Burner):
     caller.requestanim = True
     caller.animname = "Moonwalk"
@@ -85,4 +86,17 @@ def weapMMissile(caller,Burner):
     caller.actionqueue.append([5,["firebullet",[[120,0],caller.depth,caller.parallax,"Missile",caller.layer,[caller]]],[None,None,True]])
     
 def weapdirtycheaterpower(caller,Burner):
+    caller.requestanim = True
+    caller.animname = "Moonwalk"
     print("I LOL'D")
+
+#death functions
+def dieDefault(caller,Burner):
+    caller.delete()
+
+def diePlayer(caller,Burner):
+    caller.actionqueue = [[120,["loadnextstate",["level",state.level.name]],[None,None,True]],[30,["stun",None],[None,None,True]]]
+    caller.stun = True
+    caller.animname = "Fall"
+    caller.requestanim = True
+    

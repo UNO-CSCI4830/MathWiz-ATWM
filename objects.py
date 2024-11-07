@@ -1,18 +1,19 @@
 """
 Filename: objects.py
 Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold, Zaid Kakish, Logan Jenison, John
-Version: 1.15
-Date: 10/29/2024
+Version: 1.16
+Date: 11/06/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
-import GameData as state
 import json
 import tilecollisions
 import moves
 import random
 from functools import partial
 from copy import deepcopy
+
+import GameData as state
 
 #basic class to build other objects onto
 class gameObject:
@@ -54,6 +55,10 @@ class character(gameObject):
         self.grounded = True
         self.actiontimer = 0
         self.name = name
+        if "Deathtype" in self.data.keys():
+            self.deathtype = self.data["Deathtype"]
+        else:
+            self.deathtype = type(self).__name__
         #get object info: Grapics, animations, etc.
         self.infoname = state.objectsource[name]["Info"]
         self.info = state.infosource[self.infoname]
@@ -139,7 +144,13 @@ class character(gameObject):
                     #remove the action immediately if the source isn't found
                     case _:
                         self.actionqueue.remove(action)
-                        
+
+    def kill(self):
+        if getattr(moves,f"die{self.deathtype}") != None:
+            getattr(moves,f"die{self.deathtype}")(self,None)
+        else:
+            moves.dieDefault(self,None)
+        
     def animationpick(self):
         #OVERRIDE: If specially requested, play that animation until completion.
         if self.requestanim == False:
@@ -668,22 +679,17 @@ class Player(character):
             self.damagetake(10)
 
     def damagetake(self,dmg):
-        if not self.stun:
-            self.health -= dmg
-            self.animname = "Fall"
-            self.requestanim = True
-            self.actionqueue.append([0,["walk",10],[None,None,True]])
-            self.actionqueue.append([0,["jump",20],[None,None,True]])
-            self.actionqueue.append([0,["stun",dmg],[None,None,True]])
-            self.actionqueue.append([30,["destun",dmg],[None,None,True]])
-        if self.health <= 0:
-            self.gameover()
-
-    def gameover(self):
-        self.actionqueue.append([120,["loadnextstate",["level",state.level.name]],[None,None,True]])
-        self.actionqueue.append([30,["stun",None],[None,None,True]])
-        self.animname = "Fall"
-        self.requestanim = True
+        if self.health > 0:
+            if not self.stun:
+                self.health -= dmg
+                self.animname = "Fall"
+                self.requestanim = True
+                self.actionqueue.append([0,["walk",10],[None,None,True]])
+                self.actionqueue.append([0,["jump",20],[None,None,True]])
+                self.actionqueue.append([0,["stun",dmg],[None,None,True]])
+                self.actionqueue.append([30,["destun",dmg],[None,None,True]])
+            if self.health <= 0:
+                self.kill()
 
 class Enemy(character):
     def __init__(self,locus,depth,parallax,name,layer,extras):
@@ -744,5 +750,5 @@ class Enemy(character):
         self.actionqueue.append([30,["destun",dmg],[None,None,True]])
         self.health -= dmg
         if self.health <= 0:
-            self.delete()
+            self.actionqueue = [[0,["dieDefault",None],[None,None,True]]]
             

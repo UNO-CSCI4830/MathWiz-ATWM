@@ -1,8 +1,8 @@
 """
 Filename: menufuncs.py
 Author(s): Taliesin Reese
-Version: 1.2
-Date: 10/29/2024
+Version: 1.3
+Date: 11/06/2024
 Purpose: functions for menus in "MathWiz!"
 """
 import json
@@ -25,7 +25,11 @@ def loadmenu(menuname):
 #load a level as prescribed by the json file
 def loadlevel(levelname):
     #clear all objects, resulting in their removal from memory after a while
-    state.objects = []
+    print(state.objects)
+    for item in range(len(state.objects)):
+        state.objects = state.objects[1:]
+        print(state.objects)
+    print(state.objects)
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
     #import statement down here to prevent import loop. Perhaps a better way to do this exists?
     import level
