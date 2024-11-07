@@ -10,7 +10,7 @@ _Well, I'm not telling. You'll have to play the game to find that out._
 
 ## To Run:
 1. Clone the repository to your local machine
-2. In and IDE
+2. In an IDE
    3. Open the main.py file and run using the IDE
 4. Using the Command line
    5. Navigate to the location where you clone the repository to \
