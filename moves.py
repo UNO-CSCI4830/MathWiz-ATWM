@@ -1,8 +1,8 @@
 """
 Filename: moves.py
 Author(s): Taliesin Reese
-Version: 1.7
-Date: 11/06/2024
+Version: 1.8
+Date: 11/10/2024
 Purpose: moves to be used in "MathWiz!"
 """
 import GameData as state
@@ -57,6 +57,14 @@ def loadnextstate(caller,data):
     getattr(menufuncs,f"load{data[0]}")(data[1])
 
 def hitboxon(caller,data):
+    if data[4][4] == "spawner":
+        data[4][4] = caller
+    if data[1] == "spawner":
+        data[1] = caller.depth-1
+    if data[2] == "spawner":
+        data[2] = caller.parallax
+    if data[3] == "spawner":
+        data[3] = caller.layer
     state.maker.make_obj("Hitbox",data)
 
 def firebullet(caller,data):
@@ -92,6 +100,8 @@ def weapdirtycheaterpower(caller,Burner):
 
 #death functions
 def dieDefault(caller,Burner):
+    for child in caller.children:
+        child.delete()
     caller.delete()
 
 def diePlayer(caller,Burner):

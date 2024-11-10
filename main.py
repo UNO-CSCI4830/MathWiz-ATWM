@@ -101,13 +101,13 @@ while True:
     state.HUD.fill((255,0,255))
     #update world
     state.cam.update()
-    objitr = 0
-    while objitr < len(state.objects):
-        item = state.objects[objitr]
+    state.objitr = 0
+    while state.objitr < len(state.objects):
+        item = state.objects[state.objitr]
         item.update()
         if item not in state.objects:
-            objitr -= 1
-        objitr += 1
+            state.objitr -= 1
+        state.objitr += 1
     #draw HUD
     state.display.blit(state.HUD,(0,0))
     #display
