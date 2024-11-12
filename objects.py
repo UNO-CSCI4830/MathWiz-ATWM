@@ -558,7 +558,14 @@ class collectGoal(character):
             self.actionqueue.append([120,["loadnextstate",["cutscene","outro"]],[None,None,True]])
 
 class Projectile(character):
+    weapon_limits = {"Default": 3,
+                     "Missile": 2}
+    active_projectiles = {weapon: 0 for weapon in weapon_limits}
     def __init__(self,locus,depth,parallax,name, layer, extras):
+        self.weapon_type = name
+        max_projectiles = Projectile.weapon_limits.get(self.weapon_type,1)
+        if Projectile.active_projectiles[self.weapon_type] >= max_projectiles:
+            return
         super().__init__([extras[0].pos[0]+locus[0],extras[0].pos[1]+locus[1]],depth,parallax,name,layer,extras)
         
         self.gravity = 0
@@ -571,6 +578,7 @@ class Projectile(character):
             self.movespeed = [-50,0]
         self.persistence = False
         self.lifespan = 60
+        Projectile.active_projectiles[self.weapon_type] += 1
 
     def update(self):
         super().update()
@@ -579,9 +587,11 @@ class Projectile(character):
         if type(self.lifespan) in (int,float):
             self.lifespan -= state.deltatime
             if self.lifespan <= 0:
+                Projectile.active_projectiles[self.weapon_type] -= 1
                 self.delete()
         if self.leftblock or self.rightblock or self.topblock or self.grounded:
             if not self.persistence:
+                Projectile.active_projectiles[self.weapon_type] -= 1
                 self.delete()
 
     def render(self):
@@ -593,6 +603,7 @@ class Projectile(character):
             print(trigger.allegience)
             trigger.damagetake(self.damage)
             if not self.persistence:
+                Projectile.active_projectiles[self.weapon_type] -= 1
                 self.delete()
             
 class Player(character):
