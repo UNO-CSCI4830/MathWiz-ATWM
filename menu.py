@@ -28,11 +28,14 @@ class MenuObj:
     def update(self):
         #if mouse is within button borders, render differently
         if (state.mouse[0] >= self.pos[0]-state.cam.pos[0] and state.mouse[0] <= self.pos[0]-state.cam.pos[0]+self.size[0]) and (state.mouse[1] <= self.pos[1]-state.cam.pos[1]+self.size[1] and state.mouse[1] >= self.pos[1]-state.cam.pos[1]):
-            #if the mouse button 1 is down, run the function assigned to this object
+        # check when the mouse button is being held down, but only run self.onClick() when the mouse button is released
+        # a click is a click; you can't run a function when it's only half.
             if state.click[0]:
-                self.onClick()
+                for e in state.events:
+                    if e.type == pygame.MOUSEBUTTONUP:
+                        self.onClick()
             else:
-                self.onHover()
+                    self.onHover()
         else:
             if self.graphicsdata != None:
                 self.graphics = pygame.Surface(self.graphicsdata[2:4])
