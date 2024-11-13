@@ -1,7 +1,8 @@
 {
     "MathWiz":{
         "Type":"Player",
-        "Info":"MathWiz"
+        "Info":"MathWiz",
+        "Deathtype":"Player"
     },
     "ExponentPlatform":{
         "Type":"Platform",

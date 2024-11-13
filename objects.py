@@ -1,18 +1,19 @@
 """
 Filename: objects.py
-Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold, Zaid Kakish, Logan Jenison, John
-Version: 1.15
-Date: 10/29/2024
+Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold, Zaid Kakish, Logan Jenison, John Millar
+Version: 1.17
+Date: 11/10/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
-import GameData as state
 import json
 import tilecollisions
 import moves
 import random
 from functools import partial
 from copy import deepcopy
+
+import GameData as state
 
 #basic class to build other objects onto
 class gameObject:
@@ -29,6 +30,12 @@ class gameObject:
         state.objects.append(self)
         #resort list to ensure objects are rendered in the correct order
         state.objects.sort(key = lambda item: item.depth, reverse = True)
+
+    #check collisions between two game objects
+    def checkobjcollide(self,obj1,obj2):
+        if obj1.left[0]<=obj2.left[0]<=obj1.right[0] or obj1.left[0]<=obj2.right[0]<=obj1.right[0] or obj2.left[0]<=obj1.left[0]<=obj2.right[0] or obj2.left[0]<=obj1.right[0]<=obj2.right[0] or obj1.left[0]>=obj2.left[0]>=obj1.right[0] or obj1.left[0]>=obj2.right[0]>=obj1.right[0] or obj2.left[0]>=obj1.left[0]>=obj2.right[0] or obj2.left[0]>=obj1.right[0]>=obj2.right[0]:
+            if obj1.top[1]<=obj2.top[1]<=obj1.bottom[1] or obj1.top[1]<=obj2.bottom[1]<=obj1.bottom[1] or obj2.top[1]<=obj1.top[1]<=obj2.bottom[1] or obj2.top[1]<=obj1.bottom[1]<=obj2.bottom[1] or obj1.top[1]>=obj2.top[1]>=obj1.bottom[1] or obj1.top[1]>=obj2.bottom[1]>=obj1.bottom[1] or obj2.top[1]>=obj1.top[1]>=obj2.bottom[1] or obj2.top[1]>=obj1.bottom[1]>=obj2.bottom[1]:
+                return True
     #remove self from object list
     def delete(self):
         try:
@@ -53,7 +60,12 @@ class character(gameObject):
         self.gravity = 10
         self.grounded = True
         self.actiontimer = 0
+        self.blockable = False
         self.name = name
+        if "Deathtype" in self.data.keys():
+            self.deathtype = self.data["Deathtype"]
+        else:
+            self.deathtype = type(self).__name__
         #get object info: Grapics, animations, etc.
         self.infoname = state.objectsource[name]["Info"]
         self.info = state.infosource[self.infoname]
@@ -139,7 +151,13 @@ class character(gameObject):
                     #remove the action immediately if the source isn't found
                     case _:
                         self.actionqueue.remove(action)
-                        
+
+    def kill(self):
+        if getattr(moves,f"die{self.deathtype}") != None:
+            getattr(moves,f"die{self.deathtype}")(self,None)
+        else:
+            moves.dieDefault(self,None)
+        
     def animationpick(self):
         #OVERRIDE: If specially requested, play that animation until completion.
         if self.requestanim == False:
@@ -299,9 +317,23 @@ class character(gameObject):
             self.movement[0] = 0
         self.pos = [round(self.pos[0]),round(self.pos[1])]
 
+    def groundsnap(self):
+        #this check is exclusive to the bottom point. If the distance to the ground is less than the current forwards momentum, snap player to the ground.
+        if (not self.grounded) and type(self) == Player:
+            dist = 1
+            while dist <= abs(self.bottom[0] - self.lastbottom[0]):
+                if self.pointcollide([self.bottom[0],self.bottom[1]+dist]) != True:
+                    dist += 1
+                else:
+                    self.pos[1] += dist
+                    self.grounded = True
+                    self.getpoints()
+                    break
+                
     #check for collisions on all four points. if a collision is found, find how far the point is into the ground and move it so that it is only 1px of less deep.  
     def collide(self):
         self.getpoints()
+        #if the left or right points are blocked, the character is pressing against a wall on that side
         #if the bottom point is blocked, the player is on the ground
         self.grounded = self.pointcollide([self.bottom[0],self.bottom[1]])
         if self.grounded:
@@ -312,18 +344,6 @@ class character(gameObject):
                 else:
                     self.pos[1] -= dist-1
                     self.getpoints()
-                    break
-        #this check is exclusive to the bottom point. If the distance to the ground is less than the current forwards momentum, snap player to the ground.
-        else:
-            dist = 1
-            while dist <= 2*abs(self.speed[0]):
-                if self.pointcollide([self.bottom[0],self.bottom[1]+dist]) != True:
-                    dist += 1
-                else:
-                    if dist <= 2*abs(self.speed[0]):
-                        self.pos[1] += dist-1
-                        self.grounded = True
-                        self.getpoints()
                     break
 
         #if the top point is blocked, the character is bumping into a ceiling
@@ -359,14 +379,13 @@ class character(gameObject):
                     self.getpoints()
                     break
                 dist += 1
-
+            
     def objcollide(self):
         if self in state. objects:
             for thing in state.objects:
                 if type(thing).__name__ != "drawlayer" and thing != self and thing.layer == self.layer:
-                    if self.left[0]<=thing.left[0]<=self.right[0] or self.left[0]<=thing.right[0]<=self.right[0] or thing.left[0]<=self.left[0]<=thing.right[0] or thing.left[0]<=self.right[0]<=thing.right[0] or self.left[0]>=thing.left[0]>=self.right[0] or self.left[0]>=thing.right[0]>=self.right[0] or thing.left[0]>=self.left[0]>=thing.right[0] or thing.left[0]>=self.right[0]>=thing.right[0]:
-                        if self.top[1]<=thing.top[1]<=self.bottom[1] or self.top[1]<=thing.bottom[1]<=self.bottom[1] or thing.top[1]<=self.top[1]<=thing.bottom[1] or thing.top[1]<=self.bottom[1]<=thing.bottom[1] or self.top[1]>=thing.top[1]>=self.bottom[1] or self.top[1]>=thing.bottom[1]>=self.bottom[1] or thing.top[1]>=self.top[1]>=thing.bottom[1] or thing.top[1]>=self.bottom[1]>=thing.bottom[1]:
-                            thing.collidefunction(self)
+                    if self.checkobjcollide(self,thing):
+                        thing.collidefunction(self)
     
     def collidefunction(self,trigger):
         pass
@@ -509,7 +528,11 @@ class Hitbox(gameObject):
         self.amt = extras[2]
         self.lifespan = extras[3]
         self.parent = extras[4]
-        super().__init__([self.parent.pos[0]+self.offset[0],self.parent.pos[1]+self.offset[1]],depth,parallax, layer, extras)
+        self.allegience = self.parent.allegience
+        if self.parent == None:
+            super().__init__([self.offset[0],self.offset[1]],depth,parallax, layer, extras)
+        else:
+            super().__init__([self.parent.pos[0]+self.offset[0],self.parent.pos[1]+self.offset[1]],depth,parallax, layer, extras)
         self.hitobjects = []
         self.parent.children.append(self)
         self.getpoints()
@@ -534,15 +557,30 @@ class Hitbox(gameObject):
         self.render()
 
     def render(self):
+        if self.mode == "dmg":
+            color = [200,50,50]
+        elif self.mode == "block":
+            color = [50,50,200]
         parallaxmod = self.parallax - state.cam.depth
-        pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
+        pygame.draw.rect(state.display,color,(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
 
     def collidefunction(self,trigger):
-        if trigger.allegience != self.parent.allegience and trigger not in self.hitobjects:
+        if trigger != self.parent:
             if self.mode == "dmg":
-                trigger.damagetake(self.amt)
-            self.hitobjects.append(trigger)
-            
+                if trigger.allegience != self.allegience and trigger not in self.hitobjects:
+                    hit = True
+                    for obj in trigger.children:
+                        if type(obj) == Hitbox and obj.mode == "block":
+                            if self.checkobjcollide(self,obj):
+                                hit = False
+                    #deal damage
+                    if hit and hasattr(trigger,"damagetake"):
+                        trigger.damagetake(self.amt)
+                    self.hitobjects.append(trigger)
+            elif self.mode == "block":
+                if type(trigger)==Projectile:
+                    trigger.delete()
+
 class collectGoal(character):
     def __init__(self,locus,depth,parallax,name, layer, extras):
         super().__init__(locus,depth,parallax,name, layer, extras)
@@ -562,6 +600,7 @@ class Projectile(character):
         super().__init__([extras[0].pos[0]+locus[0],extras[0].pos[1]+locus[1]],depth,parallax,name,layer,extras)
         
         self.gravity = 0
+        self.blockable = True
         self.allegience = extras[0].allegience
         self.direction = extras[0].direction
         self.damage = 10
@@ -589,9 +628,10 @@ class Projectile(character):
         pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
                 
     def collidefunction(self,trigger):
-        if self.allegience != trigger.allegience and hasattr(trigger,"damagetake"):
-            print(trigger.allegience)
-            trigger.damagetake(self.damage)
+        if self.allegience != trigger.allegience:
+            #print(type(trigger))#.allegience)
+            if hasattr(trigger,"damagetake"):
+                trigger.damagetake(self.damage)
             if not self.persistence:
                 self.delete()
             
@@ -626,8 +666,10 @@ class Player(character):
             while self.movement != [0,0]:
                 self.move()
                 self.collide()
+                self.groundsnap()
                 self.objcollide()
             self.collide()
+            self.groundsnap()
             self.objcollide()
         for item in self.children:
             item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
@@ -668,22 +710,17 @@ class Player(character):
             self.damagetake(10)
 
     def damagetake(self,dmg):
-        if not self.stun:
-            self.health -= dmg
-            self.animname = "Fall"
-            self.requestanim = True
-            self.actionqueue.append([0,["walk",10],[None,None,True]])
-            self.actionqueue.append([0,["jump",20],[None,None,True]])
-            self.actionqueue.append([0,["stun",dmg],[None,None,True]])
-            self.actionqueue.append([30,["destun",dmg],[None,None,True]])
-        if self.health <= 0:
-            self.gameover()
-
-    def gameover(self):
-        self.actionqueue.append([120,["loadnextstate",["level",state.level.name]],[None,None,True]])
-        self.actionqueue.append([30,["stun",None],[None,None,True]])
-        self.animname = "Fall"
-        self.requestanim = True
+        if self.health > 0:
+            if not self.stun:
+                self.health -= dmg
+                self.animname = "Fall"
+                self.requestanim = True
+                self.actionqueue.append([0,["walk",10],[None,None,True]])
+                self.actionqueue.append([0,["jump",20],[None,None,True]])
+                self.actionqueue.append([0,["stun",dmg],[None,None,True]])
+                self.actionqueue.append([30,["destun",dmg],[None,None,True]])
+            if self.health <= 0:
+                self.kill()
 
 class Enemy(character):
     def __init__(self,locus,depth,parallax,name,layer,extras):
@@ -723,9 +760,11 @@ class Enemy(character):
         while self.movement != [0,0]:
             self.move()
             self.collide()
+            self.groundsnap()
             self.objcollide()
         self.objcollide()
         self.collide()
+        self.groundsnap()
         for item in self.children:
             item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
             item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
@@ -735,7 +774,8 @@ class Enemy(character):
         
     def collidefunction(self,trigger):
         if trigger.allegience != self.allegience:
-            trigger.damagetake(10)
+            if hasattr(trigger, "damagetake"):
+                trigger.damagetake(10)
             
     # eventually add a check statement like "hp -= dmg. if hp < 0 then Die"
     def damagetake(self,dmg):
@@ -744,5 +784,5 @@ class Enemy(character):
         self.actionqueue.append([30,["destun",dmg],[None,None,True]])
         self.health -= dmg
         if self.health <= 0:
-            self.delete()
+            self.actionqueue = [[0,["dieDefault",None],[None,None,True]]]
             
