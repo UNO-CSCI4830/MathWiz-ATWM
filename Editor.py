@@ -625,7 +625,7 @@ def itemaddupdate():
                     state.levelchanged = True
                 elif type(obj).__name__ not in ["drawlayer","Hitbox"]  and (obj.left[0]<=posadj[0]<=obj.right[0] and obj.top[1]<=posadj[1]<=obj.bottom[1]):
                     #destroy object and all it's children
-                    state.editobjs.remove([type(obj).__name__,obj.name,obj.pos,state.renderdepth,state.parallax,obj.extras])
+                    state.editobjs.remove([type(obj).__name__,obj.name,obj.pos,state.renderdepth,state.parallax,state.renderlayer,obj.extras])
                     for child in obj.children:
                         child.delete()
                     obj.delete()

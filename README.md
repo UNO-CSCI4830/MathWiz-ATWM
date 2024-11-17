@@ -8,10 +8,17 @@ _**The MathWiz!** The very son of the two wizards must step up to defeat each of
 _Well, I'm not telling. You'll have to play the game to find that out._
 
 
-## To run:
-1. Download all files
-2. Run main.py in your python interpreter of choice
-3. To change levels in the demo, go into the menus.json, find the name of the level currently being loaded by the menu buttons, and change it to the name of the level you wish to load
+## To Run:
+1. Clone the repository to your local machine
+2. In an IDE
+   3. Open the main.py file and run using the IDE
+4. Using the Command line
+   5. Navigate to the location where you clone the repository to \
+   `cd <path-to-repository>`
+   6. Use the following python command to run main.py \
+   `python main.py`
+3. To change levels in the demo, go into the menus.json, find the name of the level currently being loaded by the menu 
+button labelled "Start the Adventure!", and change the last field to the name of the level you wish to load
 
 
 ## Controls:
