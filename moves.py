@@ -98,6 +98,14 @@ def weapdirtycheaterpower(caller,Burner):
     caller.animname = "Moonwalk"
     print("I LOL'D")
 
+def explode_and_split(caller, data):
+    caller.delete()
+
+    for obj_data in data:
+        obj_type = obj_data.get("type","Projectile")
+        position = obj_data.get("position", caller.pos)
+        name = obj_data.get("name",obj_type)
+        state.maker.make_obj(obj_type,[position, name])
 #death functions
 def dieDefault(caller,Burner):
     for child in caller.children:
@@ -110,3 +118,4 @@ def diePlayer(caller,Burner):
     caller.animname = "Fall"
     caller.requestanim = True
     
+
