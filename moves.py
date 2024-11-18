@@ -1,8 +1,8 @@
 """
 Filename: moves.py
 Author(s): Taliesin Reese
-Version: 1.7
-Date: 10/29/2024
+Version: 1.8
+Date: 11/10/2024
 Purpose: moves to be used in "MathWiz!"
 """
 import GameData as state
@@ -57,6 +57,14 @@ def loadnextstate(caller,data):
     getattr(menufuncs,f"load{data[0]}")(data[1])
 
 def hitboxon(caller,data):
+    if data[4][4] == "spawner":
+        data[4][4] = caller
+    if data[1] == "spawner":
+        data[1] = caller.depth-1
+    if data[2] == "spawner":
+        data[2] = caller.parallax
+    if data[3] == "spawner":
+        data[3] = caller.layer
     state.maker.make_obj("Hitbox",data)
 
 def firebullet(caller,data):
@@ -75,6 +83,7 @@ def destun(caller,data):
 def nothing(caller, nothing):
     pass
 
+#attacks
 def weapDefault(caller,Burner):
     caller.requestanim = True
     caller.animname = "Moonwalk"
@@ -85,6 +94,8 @@ def weapMMissile(caller,Burner):
     caller.actionqueue.append([5,["firebullet",[[120,0],caller.depth,caller.parallax,"Missile",caller.layer,[caller]]],[None,None,True]])
     
 def weapdirtycheaterpower(caller,Burner):
+    caller.requestanim = True
+    caller.animname = "Moonwalk"
     print("I LOL'D")
 
 def explode_and_split(caller, data):
@@ -95,3 +106,16 @@ def explode_and_split(caller, data):
         position = obj_data.get("position", caller.pos)
         name = obj_data.get("name",obj_type)
         state.maker.make_obj(obj_type,[position, name])
+#death functions
+def dieDefault(caller,Burner):
+    for child in caller.children:
+        child.delete()
+    caller.delete()
+
+def diePlayer(caller,Burner):
+    caller.actionqueue = [[120,["loadnextstate",["level",state.level.name]],[None,None,True]],[30,["stun",None],[None,None,True]]]
+    caller.stun = True
+    caller.animname = "Fall"
+    caller.requestanim = True
+    
+
