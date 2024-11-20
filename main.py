@@ -76,8 +76,8 @@ while True:
     state.mouse = (state.mouse[0]*state.screensize[0]/800,state.mouse[1]*state.screensize[1]/800)
     #current state of the mouse buttons
     state.click = pygame.mouse.get_pressed()
-    events = pygame.event.get()
-    for event in events:
+    state.events = pygame.event.get()
+    for event in state.events:
         #quit logic
         if event.type == pygame.QUIT:
             pygame.quit()
