@@ -1,0 +1,4 @@
+{
+    "Patrol":[[0,["walk",20],["time",30,null]],[30,["walk",-20],["time",30,null]]],
+    "ProtoBoss":[[0,["camlock",null],[null,null,true]],[0,["walk",20],["time",30,null]],[30,["walk",-20],["time",30,null]]]
+}
