@@ -83,8 +83,7 @@ class character(gameObject):
         self.animframe = 0
         self.animtime = 0
         self.requestanim = False
-        if state.gamemode == "edit":
-            self.animationupdate()
+        self.animationupdate()
         #determine points for collision
         self.getpoints()
         self.lastbottom = self.bottom.copy()
@@ -125,7 +124,10 @@ class character(gameObject):
 
     def actionupdate(self):
         #iterate through every action in the queue.
-        for action in self.actionqueue:
+        actionnum = 0
+        while actionnum < len(self.actionqueue):
+            action = self.actionqueue[actionnum]
+            actionnum+=1
             #if the action has a starttimer above zero, iterate that down a peg.
             if action[0] > 0:
                 action[0] -= state.deltatime
@@ -137,20 +139,25 @@ class character(gameObject):
                     case "self":
                         if getattr(self,action[2][1]) == action[2][2]:
                             self.actionqueue.remove(action)
+                            actionnum -= 1
                     case "state":
                         if getattr(state,action[2][1]) == action[2][2]:
                             self.actionqueue.remove(action)
+                            actionnum -= 1
                     case "keys":
                         if state.keys[action[2][1]] == action[2][2]:
                             self.actionqueue.remove(action)
+                            actionnum -= 1
                     case "time":
                         if action[2][1] <= 0:
                             self.actionqueue.remove(action)
+                            actionnum -= 1
                         else:
                             action[2][1] -= state.deltatime
                     #remove the action immediately if the source isn't found
                     case _:
                         self.actionqueue.remove(action)
+                        actionnum -= 1
 
     def kill(self):
         if getattr(moves,f"die{self.deathtype}") != None:
@@ -596,7 +603,7 @@ class collectGoal(character):
             self.actionqueue.append([120,["loadnextstate",["cutscene","outro"]],[None,None,True]])
 
 class Projectile(character):
-    weapon_limits = {"Default": 3,
+    weapon_limits = {"Bustershot": 3,
                      "Missile": 2}
     active_projectiles = {weapon: 0 for weapon in weapon_limits}
     def __init__(self,locus,depth,parallax,name, layer, extras):
@@ -610,7 +617,7 @@ class Projectile(character):
         self.blockable = True
         self.allegience = extras[0].allegience
         self.direction = extras[0].direction
-        self.damage = 10
+        self.damage = self.data["dmg"]
         if extras[0].direction == 1:
             self.movespeed = [50,0]
         else:
@@ -621,6 +628,7 @@ class Projectile(character):
 
     def update(self):
         super().update()
+        self.animationupdate()
         self.speed[0] = self.movespeed[0]
         #update the lifespan timer, and remove the object if it's number is up.
         if type(self.lifespan) in (int,float):
@@ -633,10 +641,10 @@ class Projectile(character):
                 Projectile.active_projectiles[self.weapon_type] -= 1
                 self.delete()
 
-    def render(self):
+    """def render(self):
         parallaxmod = self.parallax - state.cam.depth
         pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
-                
+"""                
     def collidefunction(self,trigger):
         if self.allegience != trigger.allegience:
             #print(type(trigger))#.allegience)

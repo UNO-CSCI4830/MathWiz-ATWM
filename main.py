@@ -1,8 +1,8 @@
 """
 Filename: main.py
 Author(s): Taliesin Reese
-Verion: 1.8
-Date: 10/29/2024
+Verion: 1.9
+Date: 11/20/2024
 Purpose: Core file for "MathWiz!"
 """
 #premade library imports
@@ -48,6 +48,7 @@ state.menusheet = pygame.image.load("Assets/images/menuassets.png").convert()
 state.objectsource = json.load(open("objects.json"))
 state.aisource = json.load(open("behaviours.json"))
 state.infosource = json.load(open("entityinfo.json"))
+state.menudata = json.load(open("menus.json"))
 
 state.tilesource = json.load(open("tiles.json"))
 state.cutscenesource = json.load(open("cutscenes.json"))

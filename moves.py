@@ -1,8 +1,8 @@
 """
 Filename: moves.py
 Author(s): Taliesin Reese
-Version: 1.8
-Date: 11/10/2024
+Version: 1.9
+Date: 11/19/2024
 Purpose: moves to be used in "MathWiz!"
 """
 import GameData as state
@@ -80,36 +80,42 @@ def destun(caller,data):
     caller.pallate = caller.storepal
     caller.stun = False
 
+def camlock(caller,Burner):
+    if caller not in state.cam.locks:
+        state.cam.locks.append(caller)
+
+def camunlock(caller,Burner):
+    if caller in state.cam.locks:
+        state.cam.locks.remove(caller)
+        
+def cammove(caller,pos):
+    state.cam.pos = pos
+
 def nothing(caller, nothing):
     pass
 
 #attacks
-def weapDefault(caller,Burner):
+def weapGroove(caller,Burner):
     caller.requestanim = True
     caller.animname = "Moonwalk"
-    caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,caller.layer,[[240,240],"dmg",10,30,caller]]],[None,None,True]])
+    caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,caller.layer,[[240,240],"dmg",100,30,caller]]],[None,None,True]])
+
+def weapDefault(caller,Burner):
+    caller.actionqueue.append([5,["firebullet",[[0,0],caller.depth,caller.parallax,"Bustershot",caller.layer,[caller]]],[None,None,True]])
 
 def weapMMissile(caller,Burner):
     #caller.actionqueue.append([0,["jump",10],["keys",pygame.K_f,False]])
     caller.actionqueue.append([5,["firebullet",[[120,0],caller.depth,caller.parallax,"Missile",caller.layer,[caller]]],[None,None,True]])
-    
+
 def weapdirtycheaterpower(caller,Burner):
     caller.requestanim = True
     caller.animname = "Moonwalk"
     print("I LOL'D")
-
-def explode_and_split(caller, data):
-    caller.delete()
-
-    for obj_data in data:
-        obj_type = obj_data.get("type","Projectile")
-        position = obj_data.get("position", caller.pos)
-        name = obj_data.get("name",obj_type)
-        state.maker.make_obj(obj_type,[position, name])
 #death functions
 def dieDefault(caller,Burner):
     for child in caller.children:
         child.delete()
+    camunlock(caller,Burner)
     caller.delete()
 
 def diePlayer(caller,Burner):
@@ -117,5 +123,3 @@ def diePlayer(caller,Burner):
     caller.stun = True
     caller.animname = "Fall"
     caller.requestanim = True
-    
-

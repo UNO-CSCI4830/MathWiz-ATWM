@@ -13,6 +13,7 @@ class cam:
         self.lastpos = (0,0)
         self.depth = 0
         self.focusobj = None
+        self.locks = []
     def update(self):
         self.lastpos = self.pos
         #set focus and depth such that the focus object will always be in the center
@@ -20,7 +21,9 @@ class cam:
             self.focus = self.focusobj.pos
             self.depth = self.focusobj.parallax-1
         #set position so focus object is centered.
-        self.pos = (self.focus[0]-state.screensize[0]/2, self.focus[1]-state.screensize[1]/2)
+        #if objects are locking the camera, it should not move.
+        if self.locks == []:
+            self.pos = (self.focus[0]-state.screensize[0]/2, self.focus[1]-state.screensize[1]/2)
         #do not pan the camera if doing so would expose void.
         if state.gamemode != "edit":
             for item in state.objects:

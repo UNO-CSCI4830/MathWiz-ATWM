@@ -18,7 +18,13 @@
     },
     "Missile":{
         "Type":"Projectile",
-        "Info":"M.Missile"
+        "Info":"M.Missile",
+        "dmg":50
+    },
+    "Bustershot":{
+        "Type":"Projectile",
+        "Info":"Bustershot",
+        "dmg":10
     },
     "ExponentQuestionSpawner":{
         "Type":"spawner",
