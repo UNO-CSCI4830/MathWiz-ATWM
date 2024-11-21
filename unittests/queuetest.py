@@ -55,5 +55,6 @@ class manager(unittest.TestCase):
         state.MainPlayer.actionqueue = [[0,["walk",20],["time",0,None]],[0,["walk",20],["time",30,None]]]
         state.MainPlayer.actionupdate()
         self.assertEqual(len(state.MainPlayer.actionqueue),1)
-        self.assertEqual(state.MainPlayer.actionqueue[0][2][1],29)unittest.main(verbosity = 3)
+        self.assertEqual(state.MainPlayer.actionqueue[0][2][1],29)
+        unittest.main(verbosity = 3)
 pygame.quit()
