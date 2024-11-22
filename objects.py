@@ -83,6 +83,7 @@ class character(gameObject):
         self.animframe = 0
         self.animtime = 0
         self.requestanim = False
+        self.lastframe = self.info["Frames"][self.info["Animations"][self.animname][self.animframe][0]]
         self.animationupdate()
         #determine points for collision
         self.getpoints()
@@ -198,9 +199,23 @@ class character(gameObject):
                     self.animframe = 0
                     self.requestanim = False
             #draw the sprite
-            self.sprite.blit(state.spritesheet, self.info["Frames"][anim[self.animframe][0]][4:],(self.info["Frames"][anim[self.animframe][0]][:4]))
+            frame = self.info["Frames"][anim[self.animframe][0]]
+            center = frame[6:]
+            #adjust the size of the canvas if the sprite size is different.
+            if self.size != frame[2:4]:
+                self.size = frame[2:4]
+                self.sprite = pygame.Surface(self.size)
+                self.colorbrush = pygame.Surface(self.size)
+                self.sprite.set_colorkey(state.invis)
+                #also, adjust position to match around a center point.
+                self.pos[0] += self.lastframe[6]-center[0]
+                if self.grounded:
+                    self.pos[1] += self.lastframe[3]-self.size[1]
+                else:
+                    self.pos[1] += self.lastframe[7]-center[1]
+            self.sprite.blit(state.spritesheet, frame[4:6],(frame[:4]))
             self.sprite = pygame.transform.rotate(pygame.transform.flip(self.sprite,anim[self.animframe][1][0],anim[self.animframe][1][1]),anim[self.animframe][2])
-            
+            pygame.draw.rect(self.sprite,(255,255,255),(0,center[1],240,10))
             #get the sprite drawn with the correct palatte
             #optimize this later
             if self.pallate != "Default":
@@ -210,6 +225,7 @@ class character(gameObject):
                     self.colorbrush.blit(self.sprite,(0,0))
                     self.sprite.blit(self.colorbrush,(0,0))
                 self.sprite.set_colorkey(state.invis)
+            self.lastframe = frame
             
     #calcualte the points to use in collision detection
     def getpoints(self):
