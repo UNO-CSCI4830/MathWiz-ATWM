@@ -101,7 +101,8 @@ def weapGroove(caller,Burner):
     caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,caller.layer,[[240,240],"dmg",100,30,caller]]],[None,None,True]])
 
 def weapDefault(caller,Burner):
-    caller.actionqueue.append([5,["firebullet",[[0,0],caller.depth,caller.parallax,"Bustershot",caller.layer,[caller]]],[None,None,True]])
+    caller.shoottimer = 30
+    caller.actionqueue.append([5,["firebullet",[[0,120],caller.depth,caller.parallax,"Bustershot",caller.layer,[caller]]],[None,None,True]])
 
 def weapMMissile(caller,Burner):
     #caller.actionqueue.append([0,["jump",10],["keys",pygame.K_f,False]])

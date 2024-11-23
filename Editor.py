@@ -1,8 +1,8 @@
 """
 Filename: Editor.py
 Author(s): Taliesin Reese
-Version: 1.12
-Date: 10/29/2024
+Version: 1.13
+Date: 11/23/2024
 Purpose: Level Editor for MathWiz!
 """
 
@@ -47,7 +47,7 @@ state.level = level.level("blank")
 #main loop
 def main():
     #create stuff for modification
-    state.editloops = [False]
+    state.editloops = [[False,False]]
     state.layercount = len(state.level.tilemap)
     state.tools = createtoolbox()
     state.renderdepth = 0
@@ -171,8 +171,12 @@ def createtoolbox():
     state.Parallaxswitch.pack()
     state.Parallaxswitch.delete(0,"end")
     state.Parallaxswitch.insert(0,0)
-    state.LoopBtn = tkinter.Checkbutton(toolbar,text = "Loop:",onvalue = True,offvalue = False,variable = state.editloops[state.layercount-1],command = setlayerloop)
-    state.LoopBtn.pack()
+    state.LoopXval = tkinter.IntVar()
+    state.LoopYval = tkinter.IntVar()
+    state.LoopBtnX = tkinter.Checkbutton(toolbar,text = "Loop X:",onvalue = True,offvalue = False,variable = state.LoopXval,command = setlayerloopx)
+    state.LoopBtnX.pack()
+    state.LoopBtnY = tkinter.Checkbutton(toolbar,text = "Loop Y:",onvalue = True,offvalue = False,variable = state.LoopYval,command = setlayerloopy)
+    state.LoopBtnY.pack()
     addLayerBtn = tkinter.Button(toolbar, text = "Add new Layer", compound = "left", padx = 10, pady = 5, command = partial(addLayer))
     addLayerBtn.pack()
 
@@ -271,23 +275,32 @@ def load():
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
     state.Layerswitch.delete(0,"end")
     state.Layerswitch.insert(0,0)
-    setlayer()
     try:
         state.objects = []
         state.editobjs = []
         state.level = level.level(levelname)
         state.editloops = state.level.loops
-        state.LoopBtn.config(variable = state.editloops[state.renderlayer])
-        if state.editloops[state.renderlayer]:
-            state.LoopBtn.select()
+        """for index in range(len(state.editloops)):
+            if type(state.editloops[index]) == bool:
+                if state.editloops[index]:
+                    state.editloops[index] = [True,True]
+                else:
+                    state.editloops[index] = [False,False]"""
+        print(state.editloops[state.renderlayer][0] is state.editloops[state.renderlayer][1])
+        if state.editloops[state.renderlayer][0]:
+            state.LoopBtnX.select()
         else:
-            state.LoopBtn.deselect()
-        
+            state.LoopBtnX.deselect()
+        if state.editloops[state.renderlayer][1]:
+            state.LoopBtnY.select()
+        else:
+            state.LoopBtnY.deselect()
         state.layercount = len(state.level.tilemap)
         state.Layerswitch.config(to = state.layercount-1)
     except Exception as e:
         raise e
         print("No such file!")
+    setlayer()
         
 #new levels
 def new():
@@ -295,11 +308,14 @@ def new():
     state.editobjs = []
     state.level = level.level("blank")
     state.editloops = state.level.loops
-    state.LoopBtn.config(variable = state.editloops[state.renderlayer])
-    if state.editloops[state.renderlayer]:
-        state.LoopBtn.select()
+    if state.editloops[state.renderlayer][0]:
+        state.LoopBtnX.select()
     else:
-        state.LoopBtn.deselect()
+        state.LoopBtnX.deselect()
+    if state.editloops[state.renderlayer][1]:
+        state.LoopBtnY.select()
+    else:
+        state.LoopBtnY.deselect()
 
 def setlayer():
     try:
@@ -311,22 +327,31 @@ def setlayer():
     state.renderlayer = num
     state.renderdepth = state.level.depths[num]
     state.parallax = state.level.parallaxes[state.renderlayer]
-    state.LoopBtn.config(variable = state.editloops[state.renderlayer])
-    if state.editloops[state.renderlayer]:
-        state.LoopBtn.select()
+    if state.editloops[state.renderlayer][0]:
+        state.LoopBtnX.select()
     else:
-        state.LoopBtn.deselect()
+        state.LoopBtnX.deselect()
+    if state.editloops[state.renderlayer][1]:
+        state.LoopBtnY.select()
+    else:
+        state.LoopBtnY.deselect()
     state.cam.depth = -(1-state.level.parallaxes[state.renderlayer])
     state.Depthswitch.delete(0,"end")
     state.Depthswitch.insert(0,state.renderdepth)
     state.Parallaxswitch.delete(0,"end")
     state.Parallaxswitch.insert(0,state.level.parallaxes[state.renderlayer])
     
-def setlayerloop():
-    if state.editloops[state.renderlayer]:
-        state.editloops[state.renderlayer] = False
+def setlayerloopx():
+    if state.editloops[state.renderlayer][0]:
+        state.editloops[state.renderlayer][0] = False
     else:
-        state.editloops[state.renderlayer] = True
+        state.editloops[state.renderlayer][0] = True
+        
+def setlayerloopy():
+    if state.editloops[state.renderlayer][1]:
+        state.editloops[state.renderlayer][1] = False
+    else:
+        state.editloops[state.renderlayer][1] = True
         
 def setlayerdepth():
     print(state.renderdepth)
@@ -684,12 +709,15 @@ def addLayer():
         if type(item) == level.drawlayer:
             if item.layernum >= state.renderlayer:
                 item.layernum += 1
+        else:
+            if item.layer >= state.rednerlayer:
+                item.layernum += 1
     level.drawlayer(state.level,state.renderlayer)
     state.level.tilemap.insert(num,blank())
     state.level.pallatemap.insert(num,blank())
     state.level.spinmap.insert(num,blank())
     state.level.flipmap.insert(num,blank())
-    state.editloops.insert(num,False)
+    state.editloops.insert(num,[False,False])
     state.level.depths.insert(num,state.renderdepth)
     state.level.parallaxes.insert(num,state.renderdepth)
     state.level.animationlist.insert(num,[])

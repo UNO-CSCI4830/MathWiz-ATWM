@@ -1,8 +1,8 @@
 """
 Filename: objects.py
 Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold, Zaid Kakish, Logan Jenison, John Millar
-Version: 1.17
-Date: 11/10/2024
+Version: 1.18
+Date: 11/23/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
@@ -78,6 +78,7 @@ class character(gameObject):
         self.pallate = "Default"
         self.storepal = "Default"
         #stuff for animation
+        self.shoottimer = 0
         self.animname = "Idle"
         self.lastanim = "Idle"
         self.animframe = 0
@@ -167,27 +168,43 @@ class character(gameObject):
             moves.dieDefault(self,None)
         
     def animationpick(self):
+        framecontinue = False
         #OVERRIDE: If specially requested, play that animation until completion.
         if self.requestanim == False:
             #if nonxero speed on x-axis and grounded, return the walking animation
             if self.grounded:
                 if abs(self.speed[0]) > 0:
-                    self.animname = "Walk"
+                    if self.shoottimer > 0:
+                        if self.lastanim =="Walk":
+                            framecontinue = True
+                        self.animname = "WalkShoot"
+                    else:
+                        self.animname = "Walk"
                 #by default, return the idle animation
                 else:
-                    self.animname = "Idle"
+                    if self.shoottimer > 0:
+                        self.animname = "Shoot"
+                    else:
+                        self.animname = "Idle"
             #if not grounded and going up, retun jumping animation
             elif self.grounded == False:
                 #if notgrounded and falling down, return falling animation
-                if self.speed[1] >= 0:
-                    self.animname = "Fall"
+                if self.shoottimer > 0:
+                    self.animname = "AirShoot1"
                 else:
-                    self.animname = "Jump"
-        if self.animname != self.lastanim:
+                    if self.speed[1] >= 0:
+                        self.animname = "Fall"
+                    else:
+                        self.animname = "Jump"
+        if self.animname != self.lastanim and not framecontinue:
             self.animtime = 0
             self.animframe = 0
         
     def animationupdate(self):
+        if self.shoottimer > 0:
+            self.shoottimer -= state.deltatime
+        else:
+            self.shoottimer = 0
         self.sprite.fill(state.invis)
         self.animtime += state.deltatime
         anim = self.info["Animations"][self.animname]
@@ -215,7 +232,7 @@ class character(gameObject):
                     self.pos[1] += self.lastframe[7]-center[1]
             self.sprite.blit(state.spritesheet, frame[4:6],(frame[:4]))
             self.sprite = pygame.transform.rotate(pygame.transform.flip(self.sprite,anim[self.animframe][1][0],anim[self.animframe][1][1]),anim[self.animframe][2])
-            pygame.draw.rect(self.sprite,(255,255,255),(0,center[1],240,10))
+            #pygame.draw.rect(self.sprite,(255,255,255),(0,center[1],240,10))
             #get the sprite drawn with the correct palatte
             #optimize this later
             if self.pallate != "Default":
@@ -243,8 +260,9 @@ class character(gameObject):
                 tile = [int(point[0]//state.tilesize),int(point[1]//state.tilesize)]
                 #get values from said tile
                 #UNLESS the layer is supposed to loop--THEN simply loop the information from the list
-                if item.loop == True:
-                    tile = [tile[0]%(item.longest), tile[1]%(len(state.level.tilemap[item.layernum]))]
+                if item.loop[0] == True:
+                    tile[0] = tile[0]%(item.longest)
+                    tile[1] = tile[1]%(len(state.level.tilemap[item.layernum]))
                 #unless it doesn't exist. Then, treat it as if it were solid to prevent out-of-bounds errors
                 if (tile[0] < 0 or tile[1] < 0) or (tile[0] >= item.longest or tile[1] >= len(state.level.tilemap[item.layernum])):
                     tiletype = 1
@@ -760,14 +778,18 @@ class Player(character):
 class Enemy(character):
     def __init__(self,locus,depth,parallax,name,layer,extras):
         super().__init__(locus,depth,parallax,name,layer,extras)
-        if extras != [""]:
-            self.behavior = state.aisource[extras[0]]
+        print(self.data.keys())
+        if "Behavior" in self.data.keys():
+            self.behavior = state.aisource[self.data["Behavior"]]
         else:
             self.behavior = [[0,["nothing","nothing"],[None,None,False]]]
+        if "Pallate" in self.data.keys():
+            self.pallate = self.data["Pallate"]
+        else:
+            self.pallate = "Default"
         self.health = 100
         self.gravity = 50
         self.grounded = False
-        self.pallate = "Shadow"
         #find player to target
         for obj in state.objects:
             if "Player" in str(obj):
