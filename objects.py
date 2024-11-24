@@ -76,7 +76,7 @@ class character(gameObject):
         self.colorbrush = pygame.Surface(self.size)
         self.sprite.set_colorkey(state.invis)
         self.pallate = "Default"
-        self.storepal = "Default"
+        self.storepal = None
         #stuff for animation
         self.shoottimer = 0
         self.animname = "Idle"
@@ -96,6 +96,7 @@ class character(gameObject):
         #the action queue is used to hold the current action.
         self.actionqueue = []
         self.stun = False
+        self.iframes = 0
         #allegience value for projectile and damage collisions.
         self.allegience = "Enemy"
 
@@ -110,6 +111,10 @@ class character(gameObject):
         self.lastdir = self.direction
         self.actionupdate()
         self.getpoints()
+        if self.iframes > 0:
+            self.iframes -= state.deltatime
+        else:
+            self.iframes = 0
         if self in state.objects:
             self.physics()
             self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
@@ -547,7 +552,7 @@ class CollapsingPlatform(Platform):
     def damagetake(self,amount):
         self.animname = "Break"
         self.actionqueue.append([6,["collapsestart",None],["self","collapsing",True]])
-        self.actionqueue.append([60,["delete",None],[None,None,True]])
+        self.actionqueue.append([60,["diePlat","WoodPlank"],[None,None,True]])
         
     def collidefunction(self,trigger):
         if trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0 and self.collapsing == False and type(trigger) == Player:
@@ -559,7 +564,7 @@ class CollapsingPlatform(Platform):
             trigger.movement[1] = 0
             trigger.pos[1] = self.top[1] - trigger.size[1]
             self.actionqueue.append([6,["collapsestart",None],["self","collapsing",True]])
-            self.actionqueue.append([60,["delete",None],[None,None,True]])
+            self.actionqueue.append([60,["diePlat","WoodPlank"],[None,None,True]])
             
 class Hitbox(gameObject):
     def __init__(self,locus,depth,parallax, layer, extras):
@@ -713,6 +718,10 @@ class Player(character):
             self.physics()
             if not self.stun:
                 self.playerControl()
+            if self.iframes > 0:
+                self.iframes -= state.deltatime
+            else:
+                self.iframes = 0
             self.actionupdate()
             #print(self.speed)
             self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
@@ -721,9 +730,9 @@ class Player(character):
                 self.collide()
                 self.groundsnap()
                 self.objcollide()
-            self.collide()
+            """self.collide()
             self.groundsnap()
-            self.objcollide()
+            self.objcollide()"""
         for item in self.children:
             item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
             item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
@@ -761,17 +770,32 @@ class Player(character):
         #test damage
         if pygame.K_m in state.newkeys:
             self.damagetake(10)
+            #state.particleManager.particles[self.layer].append([self.pos,[[0,0,120,120,0,0,0,1]],[0,-20],[0,5],[120,120],0,0,60])
 
     def damagetake(self,dmg):
         if self.health > 0:
-            if not self.stun:
+            if self.iframes <= 0:
                 self.health -= dmg
                 self.animname = "Fall"
                 self.requestanim = True
+                self.iframes = 90
                 self.actionqueue.append([0,["walk",10],[None,None,True]])
                 self.actionqueue.append([0,["jump",20],[None,None,True]])
                 self.actionqueue.append([0,["stun",dmg],[None,None,True]])
                 self.actionqueue.append([30,["destun",dmg],[None,None,True]])
+                #apply stun pallate after a while. Maybe we replace this with a flicker function?
+                self.actionqueue.append([35,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([40,["deTempPallate",None],[None,None,True]])
+                self.actionqueue.append([45,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([50,["deTempPallate",None],[None,None,True]])
+                self.actionqueue.append([55,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([60,["deTempPallate",None],[None,None,True]])
+                self.actionqueue.append([65,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([70,["deTempPallate",None],[None,None,True]])
+                self.actionqueue.append([75,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([80,["deTempPallate",None],[None,None,True]])
+                self.actionqueue.append([85,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([90,["deTempPallate",None],[None,None,True]])
             if self.health <= 0:
                 self.kill()
 

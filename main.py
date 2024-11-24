@@ -1,3 +1,4 @@
+
 """
 Filename: main.py
 Author(s): Taliesin Reese
@@ -15,6 +16,7 @@ import menu
 import level
 import objects
 import menufuncs
+import particles
 import maker
 
 #initialize pygame stuffs
@@ -43,6 +45,7 @@ clock = pygame.time.Clock()
 #load assets
 state.tilesheet = pygame.image.load("Assets/images/tiles.png").convert()
 state.spritesheet = pygame.image.load("Assets/images/CharSprites.png").convert()
+state.spritesheet.set_colorkey((255,0,255))
 state.menusheet = pygame.image.load("Assets/images/menuassets.png").convert()
 
 state.objectsource = json.load(open("objects.json"))
@@ -51,12 +54,14 @@ state.infosource = json.load(open("entityinfo.json"))
 state.menudata = json.load(open("menus.json"))
 
 state.tilesource = json.load(open("tiles.json"))
+state.particlesource = json.load(open("particles.json"))
 state.cutscenesource = json.load(open("cutscenes.json"))
 
 #initialize game stuffs
 state.gamemode = "play"
 state.maker = maker.maker()
 state.invis = (255,0,255)
+state.particleManager = particles.ParticleManager()
 state.HUD.set_colorkey(state.invis)
 state.deltatime = 1
 state.fpsTarget = 60
@@ -106,6 +111,8 @@ while True:
     while state.objitr < len(state.objects):
         item = state.objects[state.objitr]
         item.update()
+        if type(item).__name__=="drawlayer":
+            state.particleManager.updateLayer(item.layernum)
         if item not in state.objects:
             state.objitr -= 1
         state.objitr += 1

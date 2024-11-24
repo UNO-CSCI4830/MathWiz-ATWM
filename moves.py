@@ -9,6 +9,8 @@ import GameData as state
 import pygame
 import menufuncs
 
+from copy import deepcopy
+
 #set vertical velocity to the jumpspeed
 def jump(caller, height):
     #alter this check later to allow for controller support, if that happens
@@ -72,14 +74,23 @@ def firebullet(caller,data):
 
 def stun(caller,data):
     if not caller.stun:
+        tempPallate(caller,"Stun")
         caller.stun = True
-        caller.storepal = caller.pallate
-        caller.pallate = "Stun"
     
 def destun(caller,data):
-    caller.pallate = caller.storepal
+    deTempPallate(caller,"Stun")
     caller.stun = False
+    
+def tempPallate(caller,name):
+    if caller.storepal == None:
+        caller.storepal = caller.pallate
+        caller.pallate = name
 
+def deTempPallate(caller,Burner):
+    if caller.storepal != None:
+        caller.pallate = caller.storepal
+        caller.storepal = None
+    
 def camlock(caller,Burner):
     if caller not in state.cam.locks:
         state.cam.locks.append(caller)
@@ -94,6 +105,34 @@ def cammove(caller,pos):
 def nothing(caller, nothing):
     pass
 
+def levelStart(caller,Burner):
+    if type(caller).__name__ == "Player":
+        state.HUD.blit(state.font.render(f"Get Ready",False,[255,255,255],[0,0,0]),(1800,1800))
+
+def particleSpawn(caller,data):
+    #when inserting particles using this function, format thusly:
+    """[
+        Location,
+        [
+           [Particle Data Name, flipx,flipy,rotate,frametime]
+        ],
+        Init Speed,
+        Update Speed,
+        Max Speed,
+        Lifespan
+    ]"""
+    fullparticles = []
+    for frame in range(len(data[1])):
+        fullparticles.append([])
+        if data[1][frame][0] in state.particlesource["Graphics"].keys():
+            particleinfo = deepcopy(state.particlesource["Graphics"][data[1][frame][0]])
+        else:
+            particleinfo = [1203,620,120,101]
+        particleinfo.extend(data[1][frame][1:])
+        fullparticles[frame] = particleinfo
+    state.particleManager.particles[caller.layer].append(deepcopy([data[0],fullparticles,data[2],data[3],data[4],0,0,data[5]]))
+    
+    
 #attacks
 def weapGroove(caller,Burner):
     caller.requestanim = True
@@ -124,3 +163,32 @@ def diePlayer(caller,Burner):
     caller.stun = True
     caller.animname = "Fall"
     caller.requestanim = True
+    camunlock(caller,Burner)
+
+def diePlat(caller,particlename):
+    particleSpawn(caller,[[caller.left[0],caller.top[1]],
+                      [[particlename,0,0,0,10],
+                       [particlename,0,0,90,10],
+                       [particlename,0,0,180,10],
+                       [particlename,0,0,270,10]],
+                      [-10,-10],[0,20],[50,100],60])
+    particleSpawn(caller,[[caller.left[0],caller.bottom[1]],
+                      [[particlename,0,0,0,10],
+                       [particlename,0,0,90,10],
+                       [particlename,0,0,180,10],
+                       [particlename,0,0,270,10]],
+                      [-5,-10],[0,20],[50,100],60])
+    particleSpawn(caller,[[caller.right[0],caller.top[1]],
+                      [[particlename,0,0,0,10],
+                       [particlename,0,0,90,10],
+                       [particlename,0,0,180,10],
+                       [particlename,0,0,270,10]],
+                      [10,-10],[0,20],[50,100],60])
+    particleSpawn(caller,[[caller.right[0],caller.bottom[1]],
+                      [[particlename,0,0,0,10],
+                       [particlename,0,0,90,10],
+                       [particlename,0,0,180,10],
+                       [particlename,0,0,270,10]],
+                      [5,-10],[0,20],[50,100],60])
+    camunlock(caller,None)
+    caller.delete()
