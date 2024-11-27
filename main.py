@@ -1,9 +1,8 @@
-
 """
 Filename: main.py
 Author(s): Taliesin Reese
-Verion: 1.9
-Date: 11/20/2024
+Verion: 1.10
+Date: 11/25/2024
 Purpose: Core file for "MathWiz!"
 """
 #premade library imports
@@ -34,7 +33,7 @@ state.displaysize = state.savedata[str(state.savefile)]["displaysize"]
 state.tilesize = 120
 #anyway set up pygame stuff
 state.screensize = (state.tilesize*30,state.tilesize*30)
-state.window = pygame.display.set_mode((state.displaysize,state.displaysize))
+state.window = pygame.display.set_mode(state.displaysize)
 state.display = pygame.Surface(state.screensize)
 state.HUD = pygame.Surface(state.screensize)
 state.font = pygame.font.SysFont("Lucida Console",75)
@@ -74,12 +73,16 @@ state.cam = Cam.cam()
 menufuncs.loadcutscene("Intro")
 
 while True:
+    #calculate deltatime. This is used to augment certain values and keep the speed of things independent from the framerate
+    if state.adjustdeltatime:
+        state.deltatime = state.fpsTarget*clock.get_time()/(1000)
+    #print(state.deltatime) 
     #input handling--maybe throw this into it's own file for the sake of organization?
     #newkeys is a suprise tool that will help us later
     state.newkeys = []
     #position of the mouse cursor relative to the window. Adjusted for the scaling.
     state.mouse = pygame.mouse.get_pos()
-    state.mouse = (state.mouse[0]*state.screensize[0]/800,state.mouse[1]*state.screensize[1]/800)
+    state.mouse = (state.mouse[0]*state.screensize[0]/state.displaysize[0],state.mouse[1]*state.screensize[1]/state.displaysize[1])
     #current state of the mouse buttons
     state.click = pygame.mouse.get_pressed()
     state.events = pygame.event.get()
@@ -97,11 +100,6 @@ while True:
     """FOR TESTING UNDER HEAVY LAG:"""
     #from time import sleep
     #sleep(0.25)
-
-    #calculate deltatime. This is used to augment certain values and keep the speed of things independent from the framerate
-    if state.adjustdeltatime:
-        state.deltatime = state.fpsTarget*clock.get_time()/(1000)
-    #print(state.deltatime)
     #reset display
     state.display.fill((0,0,255))
     state.HUD.fill((255,0,255))
@@ -119,6 +117,6 @@ while True:
     #draw HUD
     state.display.blit(state.HUD,(0,0))
     #display
-    state.window.blit(pygame.transform.scale(state.display,(state.displaysize,state.displaysize)),(0,0))
+    state.window.blit(pygame.transform.scale(state.display,state.displaysize),(0,0))
     pygame.display.flip()
     clock.tick()

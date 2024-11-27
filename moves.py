@@ -15,16 +15,20 @@ from copy import deepcopy
 def jump(caller, height):
     #alter this check later to allow for controller support, if that happens
     caller.speed[1] = -height
+    caller.grounded = False
             
 def jumpstall(caller,height):
+    pass
     if caller.speed[1] < 0:
-        caller.speed[1] -= (caller.gravity/2)*state.deltatime
+        caller.speed[1] -= (caller.gravity/2)*state.deltatime/2
+        caller.nextspeedadj[1] -= (caller.gravity/2)*state.deltatime/2
 
 #add the walk speed to the character, unless the speed exceeds maxspeed.
 def walk(caller,speed):
-    caller.speed[0] += speed*state.deltatime
-    if abs(caller.speed[0]) > caller.maxspeed:
-        caller.speed[0] = caller.maxspeed*(caller.speed[0]/abs(caller.speed[0]))
+    caller.speed[0] += speed*state.deltatime/2
+    caller.nextspeedadj[0] += speed*state.deltatime/2
+    if abs(caller.speed[0]) > caller.maxspeed[0]:
+        caller.speed[0] = caller.maxspeed[0]*(caller.speed[0]/abs(caller.speed[0]))
         
 def setforce(caller,force):
     if force[0] != None:
@@ -46,8 +50,10 @@ def cyclepower(caller,indexval):
         caller.pallate = caller.weap
         
 def addforce(caller,force):
-    caller.speed[0]+=force[0]*state.deltatime
-    caller.speed[1]+=force[1]*state.deltatime
+    caller.speed[0]+=force[0]*state.deltatime/2
+    caller.speed[1]+=force[1]*state.deltatime/2
+    caller.nextspeedadj[0]+=force[0]*state.deltatime/2
+    caller.nextspeedadj[1]+=force[1]*state.deltatime/2
 
 def collapsestart(caller,Nix):
     caller.collapsing = True
@@ -70,7 +76,17 @@ def hitboxon(caller,data):
     state.maker.make_obj("Hitbox",data)
 
 def firebullet(caller,data):
-    state.maker.make_obj("Projectile",data)
+    if data[5][0] == "spawner":
+        data[5][0] = caller
+    if data[1] == "spawner":
+        data[1] = caller.depth-1
+    if data[2] == "spawner":
+        data[2] = caller.parallax
+    if data[4] == "spawner":
+        data[4] = caller.layer
+    if caller.shotLimits.get(data[3])!= None:
+        if caller.bulletCounts[data[3]] < caller.shotLimits[data[3]]:
+            state.maker.make_obj("Projectile",data)
 
 def stun(caller,data):
     if not caller.stun:

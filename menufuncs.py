@@ -40,7 +40,7 @@ def loadlevel(levelname):
             item.actionqueue.append([0,[f"levelStart",None],["time",90,None]])
             item.stun = True
             item.actionqueue.append([90,["destun",None],[None,None,None]])
-    state.deltatime = 1
+    state.deltatime = 2
 
 #load the cutscene player
 def loadcutscene(scenename):

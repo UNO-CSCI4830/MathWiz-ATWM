@@ -1,8 +1,8 @@
 """
 Filename: Editor.py
 Author(s): Taliesin Reese
-Version: 1.13
-Date: 11/23/2024
+Version: 1.14
+Date: 11/25/2024
 Purpose: Level Editor for MathWiz!
 """
 
@@ -625,17 +625,19 @@ def itemaddupdate():
     try:
         extras = state.extrasget.get('1.0','end-1c').split('`')
     except:
-        print("AH")
         extras = ["TEST"]
     #if new leftclick:
     if state.click[0] and not state.wasclick[0]:
         #place the selected object at that point
-        state.addobjindex = state.objselect.curselection()[0]
-        state.addobj = state.objselect.get(state.addobjindex)
-        if state.addobj != None:
-            added = getattr(objects,state.objectsource[state.addobj]["Type"])(posadj,state.renderdepth,state.parallax,state.addobj,state.renderlayer,extras)
-            state.editobjs.append([state.objectsource[state.addobj]["Type"],state.addobj,posadj,state.renderdepth,state.parallax,state.renderlayer,extras])
-            state.levelchanged = True
+        if state.objselect.curselection() != ():
+            state.addobjindex = state.objselect.curselection()[0]
+            state.addobj = state.objselect.get(state.addobjindex)
+            if state.addobj != None:
+                added = getattr(objects,state.objectsource[state.addobj]["Type"])(posadj,state.renderdepth,state.parallax,state.addobj,state.renderlayer,extras)
+                state.editobjs.append([state.objectsource[state.addobj]["Type"],state.addobj,posadj,state.renderdepth,state.parallax,state.renderlayer,extras])
+                state.levelchanged = True
+        else:
+            print("Cannot Place, no Object Selected")
     #if new rightclick:
     elif state.click[2] and not state.wasclick[2]:
         #for object on layer:

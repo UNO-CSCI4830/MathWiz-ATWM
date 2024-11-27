@@ -26,6 +26,7 @@ class gameObject:
         self.parallax = parallax
         self.layer = layer
         self.speed = [0,0]
+        self.nextspeedadj = [0,0]
         #add to list of objects that are updated every frame
         state.objects.append(self)
         #resort list to ensure objects are rendered in the correct order
@@ -55,8 +56,7 @@ class character(gameObject):
         self.movement = [0,0]
         self.direction = 1
         self.lastdirection = 1
-        self.maxfall = 50
-        self.maxspeed = 20
+        self.maxspeed = [20,50]
         self.gravity = 10
         self.grounded = True
         self.actiontimer = 0
@@ -99,6 +99,12 @@ class character(gameObject):
         self.iframes = 0
         #allegience value for projectile and damage collisions.
         self.allegience = "Enemy"
+        #limits for weapons to shoot
+        if "WeapLimits" in self.data.keys():
+            self.shotLimits = self.data["WeapLimits"]
+        else:
+            self.shotLimits = {}
+        self.bulletCounts = {weapon: 0 for weapon in self.shotLimits}
 
     #run every frame to update the character's logic    
     def update(self):
@@ -109,7 +115,6 @@ class character(gameObject):
         self.lastleft = self.left.copy()
         self.lastright = self.right.copy()
         self.lastdir = self.direction
-        self.actionupdate()
         self.getpoints()
         if self.iframes > 0:
             self.iframes -= state.deltatime
@@ -124,10 +129,14 @@ class character(gameObject):
                 self.objcollide()
             self.objcollide()
             self.collide()
-            for item in self.children:
-                item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
-                item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
             self.render()
+        self.actionupdate()
+        for item in self.children:
+            item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
+            item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
+        self.speed[0] += self.nextspeedadj[0]
+        self.speed[1] += self.nextspeedadj[1]
+        self.nextspeedadj = [0,0]
 
     def actionupdate(self):
         #iterate through every action in the queue.
@@ -319,20 +328,29 @@ class character(gameObject):
     def physics(self):
         #if not touching the ground, add gravity until terminal velocity is reached
         if self.grounded == False:
-            if self.speed[1] < self.maxfall:
-                self.speed[1] += self.gravity*state.deltatime
+            if type(self) == Player:
+                pass
+            self.speed[1] += self.gravity*state.deltatime/2
+            self.nextspeedadj[1] += self.gravity*state.deltatime/2
         #otherwise, don't add gravity at all. doing so would cause the player to gain fallspeed while they stood, and causes them to fall like a ton of bricks if the ground ceases to hold them (i.e. they walk off a ledge)
         else:
             self.speed[1] = 0
+            #self.nextspeedadj[1] = 0
+        #if type(self) == Player:
+        #    print(self.pos, self.speed, self.nextspeedadj)
         #decrease move speed    
         if self.speed[0] > 0:
             self.speed[0] -= 4*state.deltatime
             if (self.speed[0]) < 1:
                 self.speed[0] = 0
+            else:
+                self.nextspeedadj[0] -= 4*state.deltatime
         elif self.speed[0] < 0:
             self.speed[0] += 4*state.deltatime
             if (self.speed[0]) > -1:
                 self.speed[0] = 0
+            else:
+                self.nextspeedadj[0] += 4*state.deltatime
             
     #pretty self-explanitory: add the movement speed to the character        
     def move(self):
@@ -427,7 +445,7 @@ class character(gameObject):
                 dist += 1
             
     def objcollide(self):
-        if self in state. objects:
+        if self in state.objects:
             for thing in state.objects:
                 if type(thing).__name__ != "drawlayer" and thing != self and thing.layer == self.layer:
                     if self.checkobjcollide(self,thing):
@@ -642,14 +660,8 @@ class collectGoal(character):
             self.actionqueue.append([120,["loadnextstate",["cutscene","outro"]],[None,None,True]])
 
 class Projectile(character):
-    weapon_limits = {"Bustershot": 3,
-                     "Missile": 2}
-    active_projectiles = {weapon: 0 for weapon in weapon_limits}
     def __init__(self,locus,depth,parallax,name, layer, extras):
         self.weapon_type = name
-        max_projectiles = Projectile.weapon_limits.get(self.weapon_type,1)
-        if Projectile.active_projectiles[self.weapon_type] >= max_projectiles:
-            return
         super().__init__([extras[0].pos[0]+locus[0],extras[0].pos[1]+locus[1]],depth,parallax,name,layer,extras)
         
         self.gravity = 0
@@ -661,36 +673,47 @@ class Projectile(character):
             self.movespeed = [50,0]
         else:
             self.movespeed = [-50,0]
+        self.gun = extras[0]
         self.persistence = False
-        self.lifespan = 60
-        Projectile.active_projectiles[self.weapon_type] += 1
+        self.lifespan = 9999
+        extras[0].bulletCounts[self.weapon_type] += 1
 
     def update(self):
+        self.lastanim = self.animname
+        self.lastpos = self.pos.copy()
+        self.lastbottom = self.bottom.copy()
+        self.lasttop = self.top.copy()
+        self.lastleft = self.left.copy()
+        self.lastright = self.right.copy()
+        self.lastdir = self.direction
+        
+        self.animationupdate()
+        #update timers
         super().update()
         self.animationupdate()
         self.speed[0] = self.movespeed[0]
+            
         #update the lifespan timer, and remove the object if it's number is up.
         if type(self.lifespan) in (int,float):
             self.lifespan -= state.deltatime
             if self.lifespan <= 0:
-                Projectile.active_projectiles[self.weapon_type] -= 1
+                self.gun.bulletCounts[self.weapon_type] -= 1
                 self.delete()
         if self.leftblock or self.rightblock or self.topblock or self.grounded:
             if not self.persistence:
-                Projectile.active_projectiles[self.weapon_type] -= 1
+                self.gun.bulletCounts[self.weapon_type] -= 1
                 self.delete()
-
-    """def render(self):
-        parallaxmod = self.parallax - state.cam.depth
-        pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
-"""                
+                #print(self.pos)
+            
     def collidefunction(self,trigger):
+        #if type(trigger) == Player:
+        #    print("gottem")
         if self.allegience != trigger.allegience:
             #print(type(trigger))#.allegience)
             if hasattr(trigger,"damagetake"):
                 trigger.damagetake(self.damage)
             if not self.persistence:
-                Projectile.active_projectiles[self.weapon_type] -= 1
+                self.gun.bulletCounts[self.weapon_type] -= 1
                 self.delete()
             
 class Player(character):
@@ -716,13 +739,10 @@ class Player(character):
             self.lastright = self.right.copy()
             self.lastdir = self.direction
             self.physics()
-            if not self.stun:
-                self.playerControl()
             if self.iframes > 0:
                 self.iframes -= state.deltatime
             else:
                 self.iframes = 0
-            self.actionupdate()
             #print(self.speed)
             self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
             while self.movement != [0,0]:
@@ -730,12 +750,20 @@ class Player(character):
                 self.collide()
                 self.groundsnap()
                 self.objcollide()
-            """self.collide()
+            self.collide()
             self.groundsnap()
-            self.objcollide()"""
+            self.objcollide()
+            if not self.stun:
+                self.playerControl()
+            self.actionupdate()
         for item in self.children:
             item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
             item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
+        #print("Before:",self.speed)
+        self.speed[0] += self.nextspeedadj[0]
+        self.speed[1] += self.nextspeedadj[1]
+        #print("After:",self.speed)
+        self.nextspeedadj = [0,0]
         state.HUD.blit(state.font.render(f"HP:{self.health}",False,[255,255,255],[0,0,0]),(30,30))
         if self.health <= 0:
             state.HUD.blit(state.font.render(f"Game Over",False,[255,0,0],[0,0,0]),(1800,1800))
@@ -756,11 +784,11 @@ class Player(character):
         if state.keys[pygame.K_a]:
             if not state.keys[pygame.K_LSHIFT] and not state.keys[pygame.K_RSHIFT]:
                 self.direction = -1
-            moves.walk(self,-20)
+            moves.walk(self,-15)
         if state.keys[pygame.K_d]:
             if not state.keys[pygame.K_LSHIFT] and not state.keys[pygame.K_RSHIFT]:
                 self.direction = 1
-            moves.walk(self,20)
+            moves.walk(self,15)
         if pygame.K_q in state.newkeys:
             self.actionqueue.append([0,["cyclepower",-1],[None,None,True]])
         if pygame.K_e in state.newkeys:
@@ -797,12 +825,12 @@ class Player(character):
                 self.actionqueue.append([85,["tempPallate","Stun"],[None,None,True]])
                 self.actionqueue.append([90,["deTempPallate",None],[None,None,True]])
             if self.health <= 0:
-                self.kill()
+                self.kill() 
 
 class Enemy(character):
     def __init__(self,locus,depth,parallax,name,layer,extras):
         super().__init__(locus,depth,parallax,name,layer,extras)
-        print(self.data.keys())
+        #print(self.data.keys())
         if "Behavior" in self.data.keys():
             self.behavior = state.aisource[self.data["Behavior"]]
         else:
@@ -828,8 +856,6 @@ class Enemy(character):
         self.lastleft = self.left.copy()
         self.lastright = self.right.copy()
         self.lastdir = self.direction
-        self.physics()
-        self.actionupdate()
         # the idea here for later on is enemy names will be tied to a different ai procedure
         # for instance, here the "test-enemy" is the "follow" AI, but a "crab" enemy could also have "follow"
         # at least, it was the idea but it seems each enemy has to be a different object in objects.json. oh well
@@ -846,9 +872,14 @@ class Enemy(character):
         self.objcollide()
         self.collide()
         self.groundsnap()
+        self.physics()
+        self.actionupdate()
         for item in self.children:
             item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
             item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
+        self.speed[0] += self.nextspeedadj[0]
+        self.speed[1] += self.nextspeedadj[1]
+        self.nextspeedadj = [0,0]
         self.animationpick()
         self.animationupdate()
         self.render()

@@ -2,7 +2,12 @@
     "MathWiz":{
         "Type":"Player",
         "Info":"MathWiz",
-        "Deathtype":"Player"
+        "Deathtype":"Player",
+        "WeapLimits":
+        {
+            "Bustershot": 3,
+            "Missile": 1
+        }
     },
     "ExponentPlatform":{
         "Type":"Platform",
@@ -25,6 +30,7 @@
         "Type":"Projectile",
         "Info":"Bustershot",
         "dmg":10
+
     },
     "ExponentQuestionSpawner":{
         "Type":"spawner",
@@ -57,7 +63,11 @@
     "test-enemy":{
         "Type":"Enemy",
         "Info":"MathWiz",
-        "Behavior":"Patrol",
-        "Pallate":"Shadow"
+        "Behavior":"PatrolPacifist",
+        "Pallate":"Shadow",
+        "WeapLimits":
+        {
+            "Bustershot": 1
+        }
         }
 }
