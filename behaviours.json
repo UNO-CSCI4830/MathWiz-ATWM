@@ -2,5 +2,6 @@
     "Patrol":[[0,["walk",20],["time",30,null]],[30,["walk",-20],["time",30,null]],[60,["firebullet",[[0,120],"spawner","spawner","Bustershot","spawner",["spawner"]]],[null,null,true]]],
     "PatrolWhack":[[0,["walk",20],["time",30,null]],[30,["walk",-20],["time",30,null]],[60,["hitboxon",[[120,0],"spawner","spawner","spawner",[[240,240],"dmg",100,30,"spawner"]]],[null,null,true]]],
     "PatrolPacifist":[[0,["walk",20],["time",30,null]],[30,["walk",-20],["time",30,null]]],
-    "ProtoBoss":[[0,["camlock",null],[null,null,true]],[0,["walk",20],["time",30,null]],[30,["walk",-20],["time",30,null]]]
+    "BossWait":[],
+    "TestBoss":[[60,["hitboxon",[[120,0],"spawner","spawner","spawner",[[240,240],"dmg",100,30,"spawner"]]],[null,null,true]]]
 }

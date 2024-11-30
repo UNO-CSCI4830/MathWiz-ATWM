@@ -1,7 +1,7 @@
 {
     "test":[
         [[0,0],[3600,3600],[0,0,1200,1200,0,0,1200,1200],0,"","nothing",["nothing"]],
-        [[800,2500],[2000,500], null, 1, "Start the Adventure!", "loadlevel", ["expotest"]],
+        [[800,2500],[2000,500], null, 1, "Start the Adventure!", "loadlevel", ["bosstest"]],
         [[800,3000],[2000,500], null, 1, "Load Menu 2", "loadmenu", ["test2"]]
     ],
     "test2":[

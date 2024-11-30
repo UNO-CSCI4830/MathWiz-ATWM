@@ -45,6 +45,13 @@ class gameObject:
                 state.camera.focusobj = None
         except:
             pass
+            
+    #calcualte the points to use in collision detection
+    def getpoints(self):
+        self.left = [self.pos[0],int(self.pos[1]+self.size[1]/2)]
+        self.right = [self.pos[0]+self.size[0],int(self.pos[1]+self.size[1]/2)]
+        self.top = [int(self.pos[0]+self.size[0]/2),self.pos[1]]
+        self.bottom = [int(self.pos[0]+self.size[0]/2),self.pos[1]+self.size[1]]
 
 #slightly less basic class to build characters on--players, enemies, moving platforms, bosses, etc.
 class character(gameObject):
@@ -257,13 +264,6 @@ class character(gameObject):
                     self.sprite.blit(self.colorbrush,(0,0))
                 self.sprite.set_colorkey(state.invis)
             self.lastframe = frame
-            
-    #calcualte the points to use in collision detection
-    def getpoints(self):
-        self.left = [self.pos[0],int(self.pos[1]+self.size[1]/2)]
-        self.right = [self.pos[0]+self.size[0],int(self.pos[1]+self.size[1]/2)]
-        self.top = [int(self.pos[0]+self.size[0]/2),self.pos[1]]
-        self.bottom = [int(self.pos[0]+self.size[0]/2),self.pos[1]+self.size[1]]
 
     #check if a point is colliding with the ground. Add logic for moving platforms later
     def pointcollide(self, point):
@@ -471,7 +471,7 @@ class spawner(gameObject):
         self.name = name
         self.data = state.objectsource[name]
         self.size = [0,0]
-        character.getpoints(self)
+        self.getpoints()
         
         self.delcond = self.data.get("DeleteCondition")
         self.spawncond = self.data.get("SpawnCondition")
@@ -625,6 +625,8 @@ class Hitbox(gameObject):
             color = [200,50,50]
         elif self.mode == "block":
             color = [50,50,200]
+        elif self.mode == "triggerfunc":
+            color = [200,150,50]
         parallaxmod = self.parallax - state.cam.depth
         pygame.draw.rect(state.display,color,(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
 
@@ -644,6 +646,9 @@ class Hitbox(gameObject):
             elif self.mode == "block":
                 if type(trigger)==Projectile:
                     trigger.delete()
+            elif self.mode == "triggerfunc":
+                if trigger.allegience != self.allegience:
+                    getattr(self.parent,func)()
 
 class collectGoal(character):
     def __init__(self,locus,depth,parallax,name, layer, extras):
@@ -777,7 +782,7 @@ class Player(character):
         if state.keys[pygame.K_SPACE]:
             if pygame.K_SPACE in state.newkeys and self.grounded == True:
                 #moves.jump(self,100)
-                self.actionqueue.append([0,["jump",100],[None,None,True]])
+                self.actionqueue.append([0,["jump",120],[None,None,True]])
             else:
                 self.actionqueue.append([0,["jumpstall",100],[None,None,True]])
         #walk left or right if the a or d keys are pressed. Swap directions accordingly unless the shift key is held.
@@ -839,6 +844,10 @@ class Enemy(character):
             self.pallate = self.data["Pallate"]
         else:
             self.pallate = "Default"
+        if "Pallate" in self.data.keys():
+            self.pallate = self.data["Pallate"]
+        else:
+            self.pallate = "Default"
         self.health = 100
         self.gravity = 50
         self.grounded = False
@@ -849,6 +858,7 @@ class Enemy(character):
         # pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
 
     def update(self):
+        #gather info about prior frame
         self.lastanim = self.animname
         self.lastpos = self.pos.copy()
         self.lastbottom = self.bottom.copy()
@@ -856,13 +866,11 @@ class Enemy(character):
         self.lastleft = self.left.copy()
         self.lastright = self.right.copy()
         self.lastdir = self.direction
-        # the idea here for later on is enemy names will be tied to a different ai procedure
-        # for instance, here the "test-enemy" is the "follow" AI, but a "crab" enemy could also have "follow"
-        # at least, it was the idea but it seems each enemy has to be a different object in objects.json. oh well
+        #refresh the actionqueue
         if not self.stun:
             if self.actionqueue == []:
                 self.actionqueue = deepcopy(self.behavior)
-        # also need to make the hitbox constant
+        #perform movement and check collisions
         self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
         while self.movement != [0,0]:
             self.move()
@@ -872,14 +880,18 @@ class Enemy(character):
         self.objcollide()
         self.collide()
         self.groundsnap()
-        self.physics()
-        self.actionupdate()
+        #adjust postitions of any child objs
         for item in self.children:
             item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
             item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
+        
+        self.physics()
+        self.actionupdate()
+        #adjust speed for the next frame--complex deltatime stuffs 
         self.speed[0] += self.nextspeedadj[0]
         self.speed[1] += self.nextspeedadj[1]
         self.nextspeedadj = [0,0]
+        #update animations
         self.animationpick()
         self.animationupdate()
         self.render()
@@ -898,3 +910,76 @@ class Enemy(character):
         if self.health <= 0:
             self.actionqueue = [[0,["dieDefault",None],[None,None,True]]]
             
+class roomLock(gameObject):
+    def __init__(self,locus,depth,parallax,name, layer, extras):
+        super().__init__(locus,depth,parallax, layer, extras)
+        self.name = name
+        self.data = state.objectsource[name]
+        self.triggers = []
+        if len(extras) > 0:
+            self.size = self.data["Size"]
+        else:
+            self.size = state.screensize
+        print(self.size)
+        self.getpoints()
+
+    def render(self):
+        if state.gamemode == "edit":
+            parallaxmod = self.parallax - state.cam.depth
+            pygame.draw.rect(state.display,(200,100,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
+        
+    def update(self):
+        self.render()
+        self.getpoints()
+
+    def collidefunction(self,trigger):
+        self.triggers.append(trigger)
+        if type(trigger) == Player:
+            state.cam.pos = self.pos.copy()
+            if self not in state.cam.locks:
+                state.cam.locks.append(self)
+            for item in state.objects:
+                if hasattr(item,"fightStart") and self.checkobjcollide(self,item):
+                    item.fightStart()
+    
+class Boss(Enemy):
+    def __init__(self,locus,depth,parallax,name,layer,extras):
+        super().__init__(locus,depth,parallax,name,layer,extras)
+        self.trueBehavior = self.behavior.copy()
+        self.behavior = state.aisource["BossWait"]
+        if len(self.extras)>0:
+            self.camoffset = extras[0]
+        
+    def update(self):
+        super().update()
+        if self.iframes > 0:
+            self.iframes -= state.deltatime
+
+    def fightStart(self):
+        self.behavior = self.trueBehavior
+        
+    def damagetake(self,dmg):
+        if self.health > 0:
+            if self.iframes <= 0:
+                self.health -= dmg
+                self.animname = "Fall"
+                self.requestanim = True
+                self.iframes = 60
+                self.actionqueue.append([0,["walk",10*self.direction],[None,None,True]])
+                self.actionqueue.append([0,["stun",dmg],[None,None,True]])
+                self.actionqueue.append([30,["destun",dmg],[None,None,True]])
+                #apply stun pallate after a while. Maybe we replace this with a flicker function?
+                self.actionqueue.append([35,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([40,["deTempPallate",None],[None,None,True]])
+                self.actionqueue.append([45,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([50,["deTempPallate",None],[None,None,True]])
+                self.actionqueue.append([55,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([60,["deTempPallate",None],[None,None,True]])
+                self.actionqueue.append([65,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([70,["deTempPallate",None],[None,None,True]])
+                self.actionqueue.append([75,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([80,["deTempPallate",None],[None,None,True]])
+                self.actionqueue.append([85,["tempPallate","Stun"],[None,None,True]])
+                self.actionqueue.append([90,["deTempPallate",None],[None,None,True]])
+            if self.health <= 0:
+                self.kill() 

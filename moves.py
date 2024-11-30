@@ -117,7 +117,7 @@ def camunlock(caller,Burner):
         
 def cammove(caller,pos):
     state.cam.pos = pos
-
+    
 def nothing(caller, nothing):
     pass
 
@@ -180,6 +180,14 @@ def diePlayer(caller,Burner):
     caller.animname = "Fall"
     caller.requestanim = True
     camunlock(caller,Burner)
+
+def dieBoss(caller,Burner):
+    if caller.target != None:
+        caller.target.stun = True
+        caller.target.speed[0] = 0
+        caller.target.animname = "Win"
+        caller.target.requestanim = True
+        caller.target.actionqueue.append([120,["loadnextstate",["cutscene","outro"]],[None,None,True]])
 
 def diePlat(caller,particlename):
     particleSpawn(caller,[[caller.left[0],caller.top[1]],

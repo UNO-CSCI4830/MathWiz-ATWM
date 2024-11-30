@@ -14,6 +14,7 @@ def loadmenu(menuname):
     state.objects = []
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
     state.cam.focusobj = None
+    state.cam.locks = []
     #import statement down here to prevent import loop. Perhaps a better way to do this exists?
     import menu
     for entity in state.menudata[menuname]:
@@ -30,6 +31,8 @@ def loadlevel(levelname):
     print(state.objects)"""
     state.objects = []
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
+    state.cam.focusobj = None
+    state.cam.locks = []
     #import statement down here to prevent import loop. Perhaps a better way to do this exists?
     import level
     state.currentlevel = level.level(levelname)
@@ -47,6 +50,8 @@ def loadcutscene(scenename):
     #clear all objects, resulting in their removal from memory after a while
     state.objects = []
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
+    state.cam.focusobj = None
+    state.cam.locks = []
     import cutscene
     cutscene.cutscenePlayer(scenename)
     state.deltatime = 1

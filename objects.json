@@ -69,5 +69,21 @@
         {
             "Bustershot": 1
         }
+    },
+    "BossRoom":{
+        "Type":"roomLock",
+        "Info":"None",
+        "Size":[3600,3600]
+    },
+    "test-boss":{
+        "Type":"Boss",
+        "Info":"MathWiz",
+        "Behavior":"TestBoss",
+        "Pallate":"Shadow",
+        "Deathtype":"Boss",
+        "WeapLimits":
+        {
+            "Bustershot": 1
         }
+    }
 }
