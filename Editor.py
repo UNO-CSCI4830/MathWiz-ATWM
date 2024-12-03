@@ -2,7 +2,7 @@
 Filename: Editor.py
 Author(s): Taliesin Reese
 Version: 1.14
-Date: 11/25/2024
+Date: 12/3/2024
 Purpose: Level Editor for MathWiz!
 """
 
@@ -35,6 +35,7 @@ state.objectsource = json.load(open("objects.json"))
 state.infosource = json.load(open("entityinfo.json"))
 state.aisource = json.load(open("behaviours.json"))
 state.objects = []
+state.extras = {}
 state.deltatime = 1
 state.maker = maker.maker()
 state.cam = Cam.cam()
@@ -153,6 +154,7 @@ def createtoolbox():
     itemadd.pack()
     animadd = ttk.Radiobutton(toolbar, text = "Add tile animations", variable = state.toolvar, value = 7)
     animadd.pack()
+    #layer adjusters
     switchLabel = tkinter.Label(toolbar,text = "Layer:")
     switchLabel.pack()
     state.Layerswitch = tkinter.Spinbox(toolbar, from_=0, to=state.layercount-1, repeatdelay=500, repeatinterval=100,command=setlayer)
@@ -171,6 +173,7 @@ def createtoolbox():
     state.Parallaxswitch.pack()
     state.Parallaxswitch.delete(0,"end")
     state.Parallaxswitch.insert(0,0)
+    #loop buttons
     state.LoopXval = tkinter.IntVar()
     state.LoopYval = tkinter.IntVar()
     state.LoopBtnX = tkinter.Checkbutton(toolbar,text = "Loop X:",onvalue = True,offvalue = False,variable = state.LoopXval,command = setlayerloopx)
@@ -198,7 +201,11 @@ def createtoolbox():
     state.objselect = tkinter.Listbox(tooloptions,selectmode = "single")
     for item in state.objectsource.keys():
         state.objselect.insert("end",item)
-    state.extrasget = tkinter.Text(tooloptions,height = 1, width = 20)
+    state.extrasbox = tkinter.Listbox(tooloptions)
+    state.extrasnameget = tkinter.Text(tooloptions,height = 1, width = 10)
+    state.extrasvalueget = tkinter.Text(tooloptions,height = 1, width = 10)
+    state.addextrasbtn = tkinter.Button(tooloptions, text = "Add Extra", compound = "left", command = partial(addExtra))
+    state.cutextrasbtn = tkinter.Button(tooloptions, text = "Remove Selected Extra", compound = "left", command = partial(cutExtra))
     
     state.animselect = tkinter.Listbox(tooloptions,selectmode = "single")
     for item in state.tilesource["anims"].keys():
@@ -226,29 +233,37 @@ def updatetoolbar():
             state.toolvarlast = state.toolvar.get()
             #add rows mode and add columns mode
             if state.toolvarlast == 0:
-                state.tileselect.pack()
+                state.tileselect.grid(row=0,column=0)
             else:
-                state.tileselect.pack_forget()
+                state.tileselect.grid_forget()
             if state.toolvarlast == 3:
-                state.pallateselect.pack()
+                state.pallateselect.grid(row=0,column=0)
             else:
-                state.pallateselect.pack_forget()
+                state.pallateselect.grid_forget()
             if state.toolvarlast == 4 or state.toolvarlast == 5:
-                state.addamtlbl.pack()
-                state.addamt.pack()
+                state.addamtlbl.grid(row=0,column=0)
+                state.addamt.grid(row=1,column=0)
             else:
-                state.addamtlbl.pack_forget()
-                state.addamt.pack_forget()
+                state.addamtlbl.grid_forget()
+                state.addamt.grid_forget()
             if state.toolvarlast == 6:
-                state.objselect.pack()
-                state.extrasget.pack()
+                state.objselect.grid(row=0,column=0,columnspan=2)
+                state.extrasnameget.grid(row = 2,column = 0)
+                state.extrasvalueget.grid(row = 2,column = 1)
+                state.extrasbox.grid(row=1,column=0,columnspan=2)
+                state.addextrasbtn.grid(row = 3,column = 0)
+                state.cutextrasbtn.grid(row = 3,column = 1)
             else:
-                state.objselect.pack_forget()
-                state.extrasget.pack_forget()
+                state.objselect.grid_forget()
+                state.extrasbox.grid_forget()
+                state.extrasnameget.grid_forget()
+                state.extrasvalueget.grid_forget()
+                state.addextrasbtn.grid_forget()
+                state.cutextrasbtn.grid_forget()
             if state.toolvarlast == 7:
-                state.animselect.pack()
+                state.animselect.grid(row=0,column=0)
             else:
-                state.animselect.pack_forget()
+                state.animselect.grid_forget()
     except Exception as e:
         print(e)
         print(state.toolvar)
@@ -374,7 +389,26 @@ def setlayerparallax():
 
 def draw(canvasarray,tile,value):
     canvasarray[state.renderlayer][tile[1]][tile[0]] = value
-            
+
+def addExtra():
+    name = state.extrasnameget.get('1.0','end-1c')
+    data = state.extrasvalueget.get('1.0','end-1c')
+    if data.isnumeric():
+        data = float(data)
+    state.extras[name] = data
+    #re-render the extras box
+    state.extrasbox.delete(0,tkinter.END)
+    for item in state.extras.keys():
+        state.extrasbox.insert("end",f"{name}:{data}")
+    
+    
+def cutExtra():
+    del state.extras[state.extrasbox.get(state.extrasbox.curselection()[0]).split(":")[0]]
+    #re-render the extras box
+    state.extrasbox.delete(0,tkinter.END)
+    for item in state.extras.keys():
+        state.extrasbox.insert(f"{name}:{data}")
+
 def blank():
     return [
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -623,7 +657,7 @@ def animaddupdate():
 def itemaddupdate():
     posadj = [state.mouse[0]+state.cam.pos[0]*state.parallaxmod,state.mouse[1]+state.cam.pos[1]*state.parallaxmod]
     try:
-        extras = state.extrasget.get('1.0','end-1c').split('`')
+        extras = state.extras.copy()
     except:
         extras = ["TEST"]
     #if new leftclick:

@@ -1,19 +1,21 @@
 """
 Filename: objects.py
 Author(s): Talieisn Reese, Vladislav Plotnikov, Drew Scebold, Zaid Kakish, Logan Jenison, John Millar
-Version: 1.18
-Date: 11/23/2024
+Version: 1.19
+Date: 12/3/2024
 Purpose: object classes for "MathWiz!"
 """
 import pygame
 import json
-import tilecollisions
-import moves
 import random
+import math
 from functools import partial
 from copy import deepcopy
 
 import GameData as state
+import tilecollisions
+import moves
+import animHandlers
 
 #basic class to build other objects onto
 class gameObject:
@@ -188,38 +190,7 @@ class character(gameObject):
         else:
             moves.dieDefault(self,None)
         
-    def animationpick(self):
-        framecontinue = False
-        #OVERRIDE: If specially requested, play that animation until completion.
-        if self.requestanim == False:
-            #if nonxero speed on x-axis and grounded, return the walking animation
-            if self.grounded:
-                if abs(self.speed[0]) > 0:
-                    if self.shoottimer > 0:
-                        if self.lastanim =="Walk":
-                            framecontinue = True
-                        self.animname = "WalkShoot"
-                    else:
-                        self.animname = "Walk"
-                #by default, return the idle animation
-                else:
-                    if self.shoottimer > 0:
-                        self.animname = "Shoot"
-                    else:
-                        self.animname = "Idle"
-            #if not grounded and going up, retun jumping animation
-            elif self.grounded == False:
-                #if notgrounded and falling down, return falling animation
-                if self.shoottimer > 0:
-                    self.animname = "AirShoot1"
-                else:
-                    if self.speed[1] >= 0:
-                        self.animname = "Fall"
-                    else:
-                        self.animname = "Jump"
-        if self.animname != self.lastanim and not framecontinue:
-            self.animtime = 0
-            self.animframe = 0
+    
         
     def animationupdate(self):
         if self.shoottimer > 0:
@@ -245,6 +216,7 @@ class character(gameObject):
                 self.sprite = pygame.Surface(self.size)
                 self.colorbrush = pygame.Surface(self.size)
                 self.sprite.set_colorkey(state.invis)
+                self.sprite.fill(state.invis)
                 #also, adjust position to match around a center point.
                 self.pos[0] += self.lastframe[6]-center[0]
                 if self.grounded:
@@ -528,7 +500,10 @@ class spawner(gameObject):
 class Sign(character):
     def __init__(self,locus,depth,parallax,name, layer, extras):
         super().__init__(locus,depth,parallax,name, layer, extras)
-        self.text = extras[0]
+        if "text" in extras.keys():
+            self.text = extras["text"]
+        else:
+            self.text = "TEST"
         #self.sprite.fill((100,100,0))
     def update(self):
         super().update()
@@ -587,11 +562,11 @@ class CollapsingPlatform(Platform):
 class Hitbox(gameObject):
     def __init__(self,locus,depth,parallax, layer, extras):
         self.offset = locus
-        self.size = extras[0]
-        self.mode = extras[1]
-        self.amt = extras[2]
-        self.lifespan = extras[3]
-        self.parent = extras[4]
+        self.size = extras["size"]
+        self.mode = extras["mode"]
+        self.amt = extras["amt"]
+        self.lifespan = extras["lifespan"]
+        self.parent = extras["parent"]
         self.allegience = self.parent.allegience
         if self.parent == None:
             super().__init__([self.offset[0],self.offset[1]],depth,parallax, layer, extras)
@@ -667,23 +642,31 @@ class collectGoal(character):
 class Projectile(character):
     def __init__(self,locus,depth,parallax,name, layer, extras):
         self.weapon_type = name
-        super().__init__([extras[0].pos[0]+locus[0],extras[0].pos[1]+locus[1]],depth,parallax,name,layer,extras)
+        self.gun = extras["parent"]
+        super().__init__([self.gun.pos[0]+locus[0],self.gun.pos[1]+locus[1]],depth,parallax,name,layer,extras)
         
         self.gravity = 0
         self.blockable = True
-        self.allegience = extras[0].allegience
-        self.direction = extras[0].direction
+        self.allegience = self.gun.allegience
+        self.direction = self.gun.direction
         self.damage = self.data["dmg"]
-        if extras[0].direction == 1:
-            self.movespeed = [50,0]
-        else:
-            self.movespeed = [-50,0]
-        self.gun = extras[0]
+        self.angle = -extras["angle"]
         self.persistence = False
-        self.lifespan = 9999
-        extras[0].bulletCounts[self.weapon_type] += 1
+        if "lifespan" in self.data.keys():
+            self.lifespan = self.data.get("lifespan")
+        else:
+            self.lifespan = 60
+        self.gun.bulletCounts[self.weapon_type] += 1
+        if "Movedata" in self.data.keys():
+            data = deepcopy(self.data["Movedata"])
+            for item in data:
+                item[1][1][0] = item[1][1][0] * self.direction
+                self.actionqueue.append(item)
+        else:
+            self.actionqueue.append([0,["setforce",[50*self.direction,0]],["time",self.lifespan,False]])
 
     def update(self):
+        #super().update()
         self.lastanim = self.animname
         self.lastpos = self.pos.copy()
         self.lastbottom = self.bottom.copy()
@@ -692,12 +675,33 @@ class Projectile(character):
         self.lastright = self.right.copy()
         self.lastdir = self.direction
         
+        self.getpoints()
+        if self.iframes > 0:
+            self.iframes -= state.deltatime
+        else:
+            self.iframes = 0
+        if self in state.objects:
+            #self.physics()
+            self.movement[0] = (self.speed[0]*math.cos(math.radians(self.angle*self.direction))+self.speed[1]*math.sin(math.radians(self.angle)))*state.deltatime
+            self.movement[1] = (self.speed[0]*math.sin(math.radians(self.angle*self.direction))+self.speed[1]*math.cos(math.radians(self.angle)))*state.deltatime
+            #self.movement = [self.speed[0]*state.deltatime,self.speed[1]*state.deltatime]
+            while self.movement != [0,0]:
+                self.move()
+                self.collide()
+                self.objcollide()
+            self.objcollide()
+            self.collide()
+            self.render()
+        self.actionupdate()
+        for item in self.children:
+            item.pos[0] = item.pos[0]+(self.pos[0]-self.lastpos[0])
+            item.pos[1] = item.pos[1]+(self.pos[1]-self.lastpos[1])
+        self.speed[0] += self.nextspeedadj[0]
+        self.speed[1] += self.nextspeedadj[1]
+        self.nextspeedadj = [0,0]
+        
         self.animationupdate()
-        #update timers
-        super().update()
-        self.animationupdate()
-        self.speed[0] = self.movespeed[0]
-            
+        
         #update the lifespan timer, and remove the object if it's number is up.
         if type(self.lifespan) in (int,float):
             self.lifespan -= state.deltatime
@@ -772,7 +776,8 @@ class Player(character):
         state.HUD.blit(state.font.render(f"HP:{self.health}",False,[255,255,255],[0,0,0]),(30,30))
         if self.health <= 0:
             state.HUD.blit(state.font.render(f"Game Over",False,[255,0,0],[0,0,0]),(1800,1800))
-        self.animationpick()
+        if hasattr(animHandlers,f"{self.name}animationPick"):
+            getattr(animHandlers,f"{self.name}animationPick")(self)
         self.animationupdate()
         self.render()
 
@@ -892,7 +897,8 @@ class Enemy(character):
         self.speed[1] += self.nextspeedadj[1]
         self.nextspeedadj = [0,0]
         #update animations
-        self.animationpick()
+        if hasattr(animHandlers,f"{self.name}animationPick"):
+            getattr(animHandlers,f"{self.name}animationPick")(self)
         self.animationupdate()
         self.render()
         
@@ -916,11 +922,10 @@ class roomLock(gameObject):
         self.name = name
         self.data = state.objectsource[name]
         self.triggers = []
-        if len(extras) > 0:
+        if "Size" in self.data.keys():
             self.size = self.data["Size"]
         else:
             self.size = state.screensize
-        print(self.size)
         self.getpoints()
 
     def render(self):
@@ -947,8 +952,6 @@ class Boss(Enemy):
         super().__init__(locus,depth,parallax,name,layer,extras)
         self.trueBehavior = self.behavior.copy()
         self.behavior = state.aisource["BossWait"]
-        if len(self.extras)>0:
-            self.camoffset = extras[0]
         
     def update(self):
         super().update()

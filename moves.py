@@ -65,8 +65,9 @@ def loadnextstate(caller,data):
     getattr(menufuncs,f"load{data[0]}")(data[1])
 
 def hitboxon(caller,data):
-    if data[4][4] == "spawner":
-        data[4][4] = caller
+    print(data)
+    if data[4]["parent"] == "spawner":
+        data[4]["parent"] = caller
     if data[1] == "spawner":
         data[1] = caller.depth-1
     if data[2] == "spawner":
@@ -76,8 +77,10 @@ def hitboxon(caller,data):
     state.maker.make_obj("Hitbox",data)
 
 def firebullet(caller,data):
-    if data[5][0] == "spawner":
-        data[5][0] = caller
+    if data[5]["parent"] == "spawner":
+        data[5]["parent"] = caller
+    if "angle" not in data[5].keys():
+        data[5]["angle"] = 0
     if data[1] == "spawner":
         data[1] = caller.depth-1
     if data[2] == "spawner":
@@ -153,15 +156,15 @@ def particleSpawn(caller,data):
 def weapGroove(caller,Burner):
     caller.requestanim = True
     caller.animname = "Moonwalk"
-    caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,caller.layer,[[240,240],"dmg",100,30,caller]]],[None,None,True]])
+    caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,caller.layer,{"size":[240,240],"type":"dmg","amt":100,"lifespan":30,"parent":caller}]],[None,None,True]])
 
 def weapDefault(caller,Burner):
     caller.shoottimer = 30
-    caller.actionqueue.append([5,["firebullet",[[0,120],caller.depth,caller.parallax,"Bustershot",caller.layer,[caller]]],[None,None,True]])
+    caller.actionqueue.append([5,["firebullet",[[0,120],caller.depth,caller.parallax,"Bustershot",caller.layer,{"parent":caller}]],[None,None,True]])
 
 def weapMMissile(caller,Burner):
     #caller.actionqueue.append([0,["jump",10],["keys",pygame.K_f,False]])
-    caller.actionqueue.append([5,["firebullet",[[120,0],caller.depth,caller.parallax,"Missile",caller.layer,[caller]]],[None,None,True]])
+    caller.actionqueue.append([5,["firebullet",[[120,0],caller.depth,caller.parallax,"Missile",caller.layer,{"parent":caller}]],[None,None,True]])
 
 def weapdirtycheaterpower(caller,Burner):
     caller.requestanim = True

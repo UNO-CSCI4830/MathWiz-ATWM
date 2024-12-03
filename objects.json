@@ -24,12 +24,16 @@
     "Missile":{
         "Type":"Projectile",
         "Info":"M.Missile",
-        "dmg":50
+        "Movedata":[[0,["setforce",[40,0]],["time",0,false]],[0,["addforce",[-1,0]],["time",60,false]]],
+        "dmg":50,
+        "lifespan":40
     },
     "Bustershot":{
         "Type":"Projectile",
         "Info":"Bustershot",
-        "dmg":10
+        "Movedata":[[0,["setforce",[50,0]],["time",60,false]]],
+        "dmg":10,
+        "lifespan":60
 
     },
     "ExponentQuestionSpawner":{
@@ -84,6 +88,17 @@
         "WeapLimits":
         {
             "Bustershot": 1
+        }
+    },
+    "Exponi":{
+        "Type":"Boss",
+        "Info":"Exponi",
+        "Behavior":"TestBoss",
+        "Pallate":"Default",
+        "Deathtype":"Boss",
+        "WeapLimits":
+        {
+            "Missile": 9
         }
     }
 }
