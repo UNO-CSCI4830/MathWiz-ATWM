@@ -327,7 +327,7 @@ def new():
 
 def setlayer():
     """
-    Sets the current layer nased on the layer switch.
+    Sets the current layer based on the layer switch.
     """
     try:
         num = int(state.Layerswitch.get())
