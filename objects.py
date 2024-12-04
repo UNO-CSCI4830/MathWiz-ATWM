@@ -17,7 +17,43 @@ import GameData as state
 
 #basic class to build other objects onto
 class gameObject:
+    """
+    A class to represent a game object.
+
+    Attributes:
+    children : list
+        The child objects of this game object.
+    extras : any
+        Additional attributes for the game object.
+    pos : tuple
+        The position of the game object.
+    lastpos : tuple
+        The previous position of the game object.
+    depth : int
+        The depth of the game object for rendering order.
+    parallax : float
+        The parallax value of the game object.
+    layer : int
+        The layer of the game object.
+    speed : list
+        The speed of the game object.
+    """
     def __init__(self, locus, depth, parallax,layer,extras):
+        """
+        Initializes the game object with the given parameters.
+
+        Parameters:
+        locus : tuple
+            The initial position of the game object.
+        depth : int
+            The depth of the game object for rendering order.
+        parallax : float
+            The parallax value of the game object.
+        layer : int
+            The layer of the game object.
+        extras : any
+            Additional attributes for the game object.
+        """
         self.children = []
         self.extras = extras
         self.pos = locus
@@ -33,11 +69,27 @@ class gameObject:
 
     #check collisions between two game objects
     def checkobjcollide(self,obj1,obj2):
+        """
+        Checks collisions between two game objects.
+
+        Parameters:
+        obj1 : gameObject
+            The first game object.
+        obj2 : gameObject
+            The second game object.
+
+        Returns:
+        bool
+            True if the objects collide, False otherwise.
+        """
         if obj1.left[0]<=obj2.left[0]<=obj1.right[0] or obj1.left[0]<=obj2.right[0]<=obj1.right[0] or obj2.left[0]<=obj1.left[0]<=obj2.right[0] or obj2.left[0]<=obj1.right[0]<=obj2.right[0] or obj1.left[0]>=obj2.left[0]>=obj1.right[0] or obj1.left[0]>=obj2.right[0]>=obj1.right[0] or obj2.left[0]>=obj1.left[0]>=obj2.right[0] or obj2.left[0]>=obj1.right[0]>=obj2.right[0]:
             if obj1.top[1]<=obj2.top[1]<=obj1.bottom[1] or obj1.top[1]<=obj2.bottom[1]<=obj1.bottom[1] or obj2.top[1]<=obj1.top[1]<=obj2.bottom[1] or obj2.top[1]<=obj1.bottom[1]<=obj2.bottom[1] or obj1.top[1]>=obj2.top[1]>=obj1.bottom[1] or obj1.top[1]>=obj2.bottom[1]>=obj1.bottom[1] or obj2.top[1]>=obj1.top[1]>=obj2.bottom[1] or obj2.top[1]>=obj1.bottom[1]>=obj2.bottom[1]:
                 return True
     #remove self from object list
     def delete(self):
+        """
+        Removes the game object from the object list.
+        """
         try:
             state.objects.remove(self)
             if state.camera.focusobj == self:
@@ -47,7 +99,49 @@ class gameObject:
 
 #slightly less basic class to build characters on--players, enemies, moving platforms, bosses, etc.
 class character(gameObject):
+    """
+    A class to represent a character in the game, such as players, enemies, moving platforms, bosses, etc.
+
+    Attributes:
+    data : dict
+        The data for the character from the object source.
+    movement : list
+        The movement vector of the character.
+    direction : int
+        The current direction the character is facing.
+    lastdirection : int
+        The last direction the character was facing.
+    maxfall : int
+        The maximum fall speed of the character.
+    maxspeed : int
+        The maximum speed of the character.
+    gravity : int
+        The gravity affecting the character.
+    grounded : bool
+        Whether the character is on the ground.
+    actiontimer : int
+        The timer for the character's actions.
+    blockable : bool
+        Whether the character can be blocked.
+    name : str
+        The name of the character.
+    deathtype : str
+        The type of death for the character.
+    infoname : str
+        The name of the character's info.
+    info : dict
+        The info data for the character.
+    size : tuple
+        The size of the character.
+    sprite : pygame.Surface
+        The surface to display the character's sprite.
+    colorbrush : pygame.Surface
+        The surface to apply color changes to the character's sprite.
+    """
     def __init__(self,locus,depth,parallax,name, layer, extras):
+        """
+        Initializes the character with the given parameters.
+        """
         #extra data used for individual object types
         self.data = state.objectsource[name]
         super().__init__(locus,depth,parallax, layer, extras)
@@ -100,6 +194,9 @@ class character(gameObject):
 
     #run every frame to update the character's logic    
     def update(self):
+        """
+        Updates the state of the object for the current frame.
+        """
         self.lastanim = self.animname
         self.lastpos = self.pos.copy()
         self.lastbottom = self.bottom.copy()
@@ -124,6 +221,14 @@ class character(gameObject):
             self.render()
 
     def actionupdate(self):
+        """
+        Updates the actions in the action queue.
+
+        This method iterates through each action in the action queue and performs the following steps:
+        If the action's start timer is greater than zero, it decrements the timer by the state's delta time.
+        If the start timer is zero or less, it executes the action using the corresponding method from the `moves` module.
+        Checks the action's pop condition and removes the action from the queue if the condition is met.
+        """
         #iterate through every action in the queue.
         for action in self.actionqueue:
             #if the action has a starttimer above zero, iterate that down a peg.
@@ -153,12 +258,34 @@ class character(gameObject):
                         self.actionqueue.remove(action)
 
     def kill(self):
+        """
+        Executes the death sequence for the object based on its death type.
+
+        This method checks if a specific death type method exists in the `moves` module.
+        If it exists, it calls that method. Otherwise, it calls the default death method.
+
+        Attributes:
+            deathtype (str): The type of death sequence to execute.
+
+        """
         if getattr(moves,f"die{self.deathtype}") != None:
             getattr(moves,f"die{self.deathtype}")(self,None)
         else:
             moves.dieDefault(self,None)
         
     def animationpick(self):
+        """
+        Determines the current animation state based on the object's speed and grounded status.
+        If a specific animation is requested (`requestanim` is True), it overrides the default behavior.
+        Attributes:
+            requestanim (bool): Flag indicating if a specific animation is requested.
+            grounded (bool): Flag indicating if the object is on the ground.
+            speed (list): A list containing the speed of the object on the x and y axes.
+            animname (str): The current animation state.
+            lastanim (str): The previous animation state.
+            animtime (int): The current time of the animation.
+            animframe (int): The current frame of the animation.
+        """
         #OVERRIDE: If specially requested, play that animation until completion.
         if self.requestanim == False:
             #if nonxero speed on x-axis and grounded, return the walking animation
@@ -180,6 +307,13 @@ class character(gameObject):
             self.animframe = 0
         
     def animationupdate(self):
+        """
+        Updates the animation state of the sprite.
+        This method updates the current frame of the animation based on the elapsed time,
+        handles the looping of the animation, and applies transformations such as flipping
+        and rotating the sprite. It also updates the sprite's palette if a non-default palette
+        is needed.
+        """
         self.sprite.fill(state.invis)
         self.animtime += state.deltatime
         anim = self.info["Animations"][self.animname]
@@ -206,6 +340,15 @@ class character(gameObject):
             
     #calcualte the points to use in collision detection
     def getpoints(self):
+        """
+        Calculate and set the coordinates for the left, right, top, and bottom points of an object.
+
+        Attributes:
+            self.left: Coordinates of the midpoint of the left side.
+            self.right: Coordinates of the midpoint of the right side.
+            self.top: Coordinates of the midpoint of the top side.
+            self.bottom: Coordinates of the midpoint of the bottom side.
+        """
         self.left = [self.pos[0],int(self.pos[1]+self.size[1]/2)]
         self.right = [self.pos[0]+self.size[0],int(self.pos[1]+self.size[1]/2)]
         self.top = [int(self.pos[0]+self.size[0]/2),self.pos[1]]
@@ -213,6 +356,15 @@ class character(gameObject):
 
     #check if a point is colliding with the ground. Add logic for moving platforms later
     def pointcollide(self, point):
+        """
+        Check if a given point collides with any object in the current state.
+        This function determines the collision of a point with tiles in the current layer.
+        It handles looping layers, out-of-bounds tiles, and flipped/rotated tiles.
+        Args:
+            point (tuple): A tuple representing the (x, y) coordinates of the point to check for collision.
+        Returns:
+            bool: True if the point collides with a solid object, otherwise False.
+        """
         #find layers to do collision on:
         for item in state.objects:
             if type(item).__name__ == "drawlayer" and item.layernum == self.layer:
@@ -271,6 +423,17 @@ class character(gameObject):
 
     #calculate physics for the object
     def physics(self):
+        """
+        Updates the physics state of the object.
+
+        Attributes:
+            self.grounded (bool): Indicates whether the object is touching the ground.
+            self.speed (list): A list containing the horizontal and vertical speed of the object.
+            self.maxfall (float): The maximum fall speed (terminal velocity) of the object.
+            self.gravity (float): The gravitational acceleration applied to the object.
+            state.deltatime (float): The time elapsed since the last frame, used to ensure consistent
+                                     physics updates regardless of frame rate.
+        """
         #if not touching the ground, add gravity until terminal velocity is reached
         if self.grounded == False:
             if self.speed[1] < self.maxfall:
@@ -290,6 +453,15 @@ class character(gameObject):
             
     #pretty self-explanitory: add the movement speed to the character        
     def move(self):
+        """
+        Moves the object based on its current movement vector and the state's movement tick amount.
+        If the movement is less than the tick amount, the position is incremented or decremented by the remaining movement amount.
+        After applying the movement, the position coordinates are rounded to the nearest integer.
+        Attributes:
+            self.pos (list): The current position of the object as a list [x, y].
+            self.movement (list): The current movement vector of the object as a list [x, y].
+            state.movetickamount (int): The amount by which the position is incremented or decremented in each tick.
+        """
         if abs(self.movement[1]) > state.movetickamount:
             if self.movement[1] > 0:
                 self.pos[1] += state.movetickamount
@@ -318,6 +490,15 @@ class character(gameObject):
         self.pos = [round(self.pos[0]),round(self.pos[1])]
 
     def groundsnap(self):
+        """
+        Snaps the player to the ground if they are close enough.
+
+        Attributes:
+            self.grounded (bool): Indicates if the player is currently grounded.
+            self.bottom (list): The bottom point of the player.
+            self.lastbottom (list): The last bottom point of the player.
+            self.pos (list): The current position of the player.
+        """
         #this check is exclusive to the bottom point. If the distance to the ground is less than the current forwards momentum, snap player to the ground.
         if (not self.grounded) and type(self) == Player:
             dist = 1
@@ -332,6 +513,15 @@ class character(gameObject):
                 
     #check for collisions on all four points. if a collision is found, find how far the point is into the ground and move it so that it is only 1px of less deep.  
     def collide(self):
+        """
+        Handles collision detection and response for the character.
+        This method checks for collisions at the character's top, bottom, left, and right points.
+        If the bottom point is blocked, the character is considered grounded. The character's position is adjusted upwards until it is no longer colliding with the ground.
+        If the top point is blocked, the character is considered to be bumping into a ceiling. The character's position is adjusted downwards until it is no longer colliding with the ceiling.
+        If the left point is blocked, the character is considered to be pressing against a wall on the left side. The character's position is adjusted to the right until it is no longer colliding with the wall.
+        If the right point is blocked, the character is considered to be pressing against a wall on the right side. The character's position is adjusted to the left until it is no longer colliding with the wall.
+        The method uses a maximum distance of 600 units to adjust the character's position in each direction.
+        """
         self.getpoints()
         #if the left or right points are blocked, the character is pressing against a wall on that side
         #if the bottom point is blocked, the player is on the ground
@@ -381,6 +571,11 @@ class character(gameObject):
                 dist += 1
             
     def objcollide(self):
+        """
+        Checks for collisions between the current object and other objects in the same layer.
+        Returns:
+            None
+        """
         if self in state. objects:
             for thing in state.objects:
                 if type(thing).__name__ != "drawlayer" and thing != self and thing.layer == self.layer:
@@ -395,6 +590,15 @@ class character(gameObject):
                 
     #Draw the player sprite to the canvas in the correct position
     def render(self):
+        """
+        Renders the object on the display with parallax effect.
+        Attributes:
+            parallaxmod (float): The modified parallax value based on the camera's depth.
+            direction (int): The direction of the object (1 for normal, otherwise flipped).
+            sprite (pygame.Surface): The sprite image of the object.
+            pos (list): The position of the object [x, y].
+            state (object): The current state of the game, containing display and camera information.
+        """
         parallaxmod = self.parallax - state.cam.depth
         if self.direction == 1:
             state.display.blit(self.sprite,[self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod])
@@ -402,7 +606,30 @@ class character(gameObject):
             state.display.blit(pygame.transform.flip(self.sprite,True,False),[self.pos[0]-state.cam.pos[0],self.pos[1]-state.cam.pos[1]])
 
 class spawner(gameObject):
+    """
+    A class to represent a spawner in the game.
+    Attributes:
+    name : str
+        The name of the spawner.
+    data : dict
+        The data for the spawner from the object source.
+    size : list
+        The size of the spawner.
+    delcond : str
+        The condition for deleting the spawner.
+    spawncond : str
+        The condition for spawning objects.
+    spawntype : str
+        The type of spawning.
+    spawnees : list
+        The list of objects to spawn.
+    spawnedobjs : list
+        The list of spawned objects.
+    """
     def __init__(self,locus,depth,parallax,name, layer, extras):
+        """
+        Initializes the spawner with the given parameters.
+        """
         super().__init__(locus,depth,parallax, layer, extras)
         self.name = name
         self.data = state.objectsource[name]
@@ -416,10 +643,16 @@ class spawner(gameObject):
         self.spawnedobjs = []
 
     def render(self):
+        """
+        Renders the spawner on the screen.
+        """
         parallaxmod = self.parallax - state.cam.depth
         pygame.draw.rect(state.display,(255,255,0),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,20,20))
         
     def update(self):
+        """
+        Updates the spawner, checking for spawn and delete conditions.
+        """
         #super().update()
         for item in self.spawnedobjs:
             if item not in state.objects:
@@ -431,6 +664,9 @@ class spawner(gameObject):
         pass
         
     def deletecheck(self):
+        """
+        Checks the delete condition and deletes the spawner if the condition is met.
+        """
         if self.delcond == "offcamera":
             #if within camera x
             if not(state.cam.pos[0]+state.screensize[0]>=self.pos[0]+self.size[0]>=state.cam.pos[0] or state.cam.pos[0]+state.screensize[0]>=self.pos[0]>=state.cam.pos[0]):
@@ -441,6 +677,9 @@ class spawner(gameObject):
                             item.delete()
                         
     def spawncheck(self):
+        """
+        Checks the spawn condition and spawns objects if the condition is met.
+        """
         if self.spawncond == "entercamera":
             #if within camera x
             if state.cam.pos[0]+state.screensize[0]>=self.pos[0]+self.size[0]>=state.cam.pos[0] or state.cam.pos[0]+state.screensize[0]>=self.pos[0]>=state.cam.pos[0]:
@@ -452,6 +691,9 @@ class spawner(gameObject):
                             #spawn things
                             self.spawn()
     def spawn(self):
+        """
+        Spawns objects based on the spawner's spawn type and object list.
+        """
         if self.spawntype == "random":
             index = random.randint(0,len(self.spawnees)-1)
             for item in self.spawnees[index]:
@@ -462,31 +704,63 @@ class spawner(gameObject):
                 self.spawnedobjs.append(globals()[item[0]]([item[2][0]+self.pos[0],item[2][1]+self.pos[1]],item[3],item[4],item[1],item[5]))
 
 class Sign(character):
+    """
+    A class to represent a sign in the game.
+
+    Attributes:
+    text: str
+        The text displayed on the sign.
+    """
     def __init__(self,locus,depth,parallax,name, layer, extras):
+        """
+        Initializes the sign with the given parameters.
+        """
         super().__init__(locus,depth,parallax,name, layer, extras)
         self.text = extras[0]
         #self.sprite.fill((100,100,0))
     def update(self):
+        """
+        Updates the sign, including its animation and text rendering.
+        """
         super().update()
         self.animationupdate()
         self.sprite.blit(state.font.render(self.text,False,(255,255,180)),(40,40))
     
         
 class Platform(character):
+    """
+    A class to represent a platform in the game.
+    """
     def __init__(self,locus,depth,parallax,name, layer, extras):
+        """
+        Initializes the platform with the given parameters.
+        """
         super().__init__(locus,depth,parallax,name, layer, extras)
         self.gravity = 0
         #self.sprite.fill((100,0,0))
         #pygame.draw.rect(self.sprite,(255,0,0),(0,0,self.size[0],20))
 
     def collide(self):
+        """
+        Handles collision events for the platform
+        """
         pass
     
     def update(self):
+        """
+        Updates the platform, including its animation.
+        """
         super().update()
         self.animationupdate()
         
     def collidefunction(self,trigger):
+        """
+        Handles the collision function for the platform.
+
+        Parameters:
+        trigger : object
+            The object that triggered the collision.
+        """
         if trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0:
             trigger.grounded = True
             trigger.speed[1] = 0
@@ -494,21 +768,44 @@ class Platform(character):
             trigger.pos[1] = self.top[1] - trigger.size[1]
 
 class CollapsingPlatform(Platform):
+    """
+    A class to represent a collapsing platform in the game.
+    """
     def __init__(self,locus,depth,parallax,name, layer, extras):
+        """
+        Initializes the collapsing platform with the given parameters.
+        """
         super().__init__(locus,depth,parallax,name, layer, extras)
         self.collapsing = False
     
     def update(self):
+        """
+        Updates the collapsing platform, including its animation.
+        """
         super().update()
         self.animationupdate()
 
     #force the platform to collapse when shot
     def damagetake(self,amount):
+        """
+        Forces the platform to collapse when shot.
+
+        Parameters:
+        amount : int
+            The amount of damage taken.
+        """
         self.animname = "Break"
         self.actionqueue.append([6,["collapsestart",None],["self","collapsing",True]])
         self.actionqueue.append([60,["delete",None],[None,None,True]])
         
     def collidefunction(self,trigger):
+        """
+        Handles the collision function for the collapsing platform.
+
+        Parameters:
+        trigger : object
+            The object that triggered the collision.
+        """
         if trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0 and self.collapsing == False and type(trigger) == Player:
             #self.sprite.fill((0,0,100))
             #pygame.draw.rect(self.sprite,(0,0,255),(0,0,self.size[0],20))
@@ -521,7 +818,13 @@ class CollapsingPlatform(Platform):
             self.actionqueue.append([60,["delete",None],[None,None,True]])
             
 class Hitbox(gameObject):
+    """
+    A class to represent a hitbox in the game.
+    """
     def __init__(self,locus,depth,parallax, layer, extras):
+        """
+        Initializes the hitbox with the given parameters.
+        """
         self.offset = locus
         self.size = extras[0]
         self.mode = extras[1]
@@ -538,11 +841,17 @@ class Hitbox(gameObject):
         self.getpoints()
     #calcualte the points to use in collision detection
     def getpoints(self):
+        """
+        Calculates the points to use in collision detection.
+        """
         self.left = [self.pos[0],int(self.pos[1]+self.size[1]/2)]
         self.right = [self.pos[0]+self.size[0],int(self.pos[1]+self.size[1]/2)]
         self.top = [int(self.pos[0]+self.size[0]/2),self.pos[1]]
         self.bottom = [int(self.pos[0]+self.size[0]/2),self.pos[1]+self.size[1]]
     def update(self):
+        """
+        Updates the hitbox, including its position and lifespan.
+        """
         #update the lifespan timer, and remove the object if it's number is up.
         if type(self.lifespan) in [int,float]:
             self.lifespan -= state.deltatime
@@ -557,6 +866,9 @@ class Hitbox(gameObject):
         self.render()
 
     def render(self):
+        """
+        Renders the hitbox on the screen.
+        """
         if self.mode == "dmg":
             color = [200,50,50]
         elif self.mode == "block":
@@ -565,6 +877,13 @@ class Hitbox(gameObject):
         pygame.draw.rect(state.display,color,(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
 
     def collidefunction(self,trigger):
+        """
+        Handles collision events for the hitbox.
+
+        Parameters:
+        trigger : object
+            The object that triggered the collision.
+        """
         if trigger != self.parent:
             if self.mode == "dmg":
                 if trigger.allegience != self.allegience and trigger not in self.hitobjects:
@@ -582,11 +901,28 @@ class Hitbox(gameObject):
                     trigger.delete()
 
 class collectGoal(character):
+    """
+    A class to represent a collectible goal in the game.
+
+    Attributes:
+    gotten : bool
+        Whether the goal has been collected.
+    """
     def __init__(self,locus,depth,parallax,name, layer, extras):
+        """
+        Initializes the collectible goal with the given parameters.
+        """
         super().__init__(locus,depth,parallax,name, layer, extras)
         self.sprite.fill((0,0,100))
         self.gotten = False
     def collidefunction(self,trigger):
+        """
+        Handles collision events for the collectible goal.
+
+        Parameters:
+        trigger: object
+            The object that triggered the collision.
+        """
         if type(trigger).__name__ == "Player" and self.gotten == False:
             trigger.stun = True
             trigger.speed[0] = 0
@@ -596,10 +932,16 @@ class collectGoal(character):
             self.actionqueue.append([120,["loadnextstate",["cutscene","outro"]],[None,None,True]])
 
 class Projectile(character):
+    """
+    A class to represent a projectile in the game.
+    """
     weapon_limits = {"Default": 3,
                      "Missile": 2}
     active_projectiles = {weapon: 0 for weapon in weapon_limits}
     def __init__(self,locus,depth,parallax,name, layer, extras):
+        """
+        Initializes the projectile with the given parameters.
+        """
         self.weapon_type = name
         max_projectiles = Projectile.weapon_limits.get(self.weapon_type,1)
         if Projectile.active_projectiles[self.weapon_type] >= max_projectiles:
@@ -620,6 +962,9 @@ class Projectile(character):
         Projectile.active_projectiles[self.weapon_type] += 1
 
     def update(self):
+        """
+        Updates the projectile, including its position, speed, and lifespan.
+        """
         super().update()
         self.speed[0] = self.movespeed[0]
         #update the lifespan timer, and remove the object if it's number is up.
@@ -634,10 +979,20 @@ class Projectile(character):
                 self.delete()
 
     def render(self):
+        """
+        Renders the projectile on the screen.
+        """
         parallaxmod = self.parallax - state.cam.depth
         pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
                 
     def collidefunction(self,trigger):
+        """
+        Handles collision events for the projectile.
+
+        Parameters:
+        trigger : object
+            The object that triggered the collision.
+        """
         if self.allegience != trigger.allegience:
             #print(type(trigger))#.allegience)
             if hasattr(trigger,"damagetake"):
@@ -647,7 +1002,23 @@ class Projectile(character):
                 self.delete()
             
 class Player(character):
+    """
+    A class to represent the player in the game.
+
+    Attributes:
+    abilities: list
+        The list of abilities the player has.
+    weap: str
+        The current weapon of the player.
+    health: int
+        The health of the player.
+    allegience: str
+        The allegiance of the player.
+    """
     def __init__(self,locus,depth,parallax,name,layer,extras):
+        """
+        Initializes the player with the given parameters.
+        """
         super().__init__(locus,depth,parallax,name,layer,extras)
         self.abilities = ["Default","MMissile"]
         self.weap = "Default"
@@ -660,6 +1031,9 @@ class Player(character):
         #pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
     #this update is the same as the one for generic characters, but it allows the player to control it.
     def update(self):
+        """
+        Updates the player, including input handling, physics, and rendering.
+        """
         if state.gamemode != "edit":
             self.lastanim = self.animname
             self.lastpos = self.pos.copy()
@@ -694,6 +1068,9 @@ class Player(character):
 
     #perform moves from the moves library based on the status of input
     def playerControl(self):
+        """
+        Handles player input and performs moves from the moves library based on the status of input.
+        """
         #run the jump function if the spacebar is down
         if state.keys[pygame.K_SPACE]:
             if pygame.K_SPACE in state.newkeys and self.grounded == True:
@@ -721,6 +1098,13 @@ class Player(character):
             self.damagetake(10)
 
     def damagetake(self,dmg):
+        """
+        Handles the player taking damage.
+
+        Parameters:
+        dmg: int
+            The amount of damage taken.
+        """
         if self.health > 0:
             if not self.stun:
                 self.health -= dmg
@@ -734,7 +1118,27 @@ class Player(character):
                 self.kill()
 
 class Enemy(character):
+    """
+    A class to represent an enemy in the game.
+
+    Attributes:
+    behavior: list
+        The behavior pattern of the enemy.
+    health: int
+        The health of the enemy.
+    gravity: int
+        The gravity affecting the enemy.
+    grounded: bool
+        Whether the enemy is on the ground.
+    pallate: str
+        The palette of the enemy.
+    target: Player
+        The player object that the enemy targets.
+    """
     def __init__(self,locus,depth,parallax,name,layer,extras):
+        """
+        Initializes the enemy with the given parameters.
+        """
         super().__init__(locus,depth,parallax,name,layer,extras)
         if extras != [""]:
             self.behavior = state.aisource[extras[0]]
@@ -751,6 +1155,9 @@ class Enemy(character):
         # pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
 
     def update(self):
+        """
+        Updates the enemy, including physics, behavior, and rendering.
+        """
         self.lastanim = self.animname
         self.lastpos = self.pos.copy()
         self.lastbottom = self.bottom.copy()
@@ -784,12 +1191,26 @@ class Enemy(character):
         self.render()
         
     def collidefunction(self,trigger):
+        """
+        Handles collision events for the enemy.
+
+        Parameters:
+        trigger : object
+            The object that triggered the collision.
+        """
         if trigger.allegience != self.allegience:
             if hasattr(trigger, "damagetake"):
                 trigger.damagetake(10)
             
     # eventually add a check statement like "hp -= dmg. if hp < 0 then Die"
     def damagetake(self,dmg):
+        """
+        Handles the enemy taking damage.
+
+        Parameters:
+        dmg : int
+            The amount of damage taken.
+        """
         self.actionqueue = []
         self.actionqueue.append([0,["stun",dmg],[None,None,True]])
         self.actionqueue.append([30,["destun",dmg],[None,None,True]])
