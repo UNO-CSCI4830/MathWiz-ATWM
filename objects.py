@@ -63,7 +63,10 @@ class character(gameObject):
         super().__init__(locus,depth,parallax, layer, extras)
         #extra variables handle things unique to objects with more logic: movement, gravity, grounded state, etc.
         self.movement = [0,0]
-        self.direction = 1
+        if "flip" in self.extras.keys():
+            self.direction = self.extras["flip"]
+        else:
+            self.direction = 1
         self.lastdirection = 1
         self.maxspeed = [20,50]
         self.gravity = 10
@@ -185,7 +188,7 @@ class character(gameObject):
                         actionnum -= 1
 
     def kill(self):
-        if getattr(moves,f"die{self.deathtype}") != None:
+        if hasattr(moves,f"die{self.deathtype}"):
             getattr(moves,f"die{self.deathtype}")(self,None)
         else:
             moves.dieDefault(self,None)
@@ -563,7 +566,7 @@ class Hitbox(gameObject):
     def __init__(self,locus,depth,parallax, layer, extras):
         self.offset = locus
         self.size = extras["size"]
-        self.mode = extras["mode"]
+        self.mode = extras["type"]
         self.amt = extras["amt"]
         self.lifespan = extras["lifespan"]
         self.parent = extras["parent"]
@@ -602,6 +605,8 @@ class Hitbox(gameObject):
             color = [50,50,200]
         elif self.mode == "triggerfunc":
             color = [200,150,50]
+        elif self.mode == "split":
+            color = [50,200,50]
         parallaxmod = self.parallax - state.cam.depth
         pygame.draw.rect(state.display,color,(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
 
@@ -624,6 +629,10 @@ class Hitbox(gameObject):
             elif self.mode == "triggerfunc":
                 if trigger.allegience != self.allegience:
                     getattr(self.parent,func)()
+            elif self.mode == "split":
+                if type(trigger) == Enemy and trigger.iframes <= 0:
+                    print(self.amt)
+                    moves.split(trigger,self.amt)
 
 class collectGoal(character):
     def __init__(self,locus,depth,parallax,name, layer, extras):
@@ -648,7 +657,8 @@ class Projectile(character):
         self.gravity = 0
         self.blockable = True
         self.allegience = self.gun.allegience
-        self.direction = self.gun.direction
+        if "flip" not in self.extras.keys():
+            self.direction = self.gun.direction
         self.damage = self.data["dmg"]
         self.angle = -extras["angle"]
         self.persistence = False
@@ -660,12 +670,14 @@ class Projectile(character):
         if "Movedata" in self.data.keys():
             data = deepcopy(self.data["Movedata"])
             for item in data:
-                item[1][1][0] = item[1][1][0] * self.direction
+                if type(item[1][1]) == list:
+                    item[1][1][0] = item[1][1][0] * self.direction
                 self.actionqueue.append(item)
         else:
             self.actionqueue.append([0,["setforce",[50*self.direction,0]],["time",self.lifespan,False]])
 
     def update(self):
+        #print("Chugging from ", self)
         #super().update()
         self.lastanim = self.animname
         self.lastpos = self.pos.copy()
@@ -730,7 +742,8 @@ class Player(character):
         super().__init__(locus,depth,parallax,name,layer,extras)
         self.abilities = ["Default","MMissile"]
         self.weap = "Default"
-        self.health = 100
+        self.maxhealth = 100
+        self.health = self.maxhealth
         self.allegience = "Hero"
         #make the camera focus on this object
         if state.gamemode != "edit":
@@ -853,7 +866,12 @@ class Enemy(character):
             self.pallate = self.data["Pallate"]
         else:
             self.pallate = "Default"
-        self.health = 100
+        self.maxhealth = 100
+        if "healthDivide" in self.extras.keys():
+            self.health = int(self.maxhealth/self.extras["healthDivide"])
+        else:
+            self.health = self.maxhealth
+        print(self.health)
         self.gravity = 50
         self.grounded = False
         #find player to target
@@ -872,6 +890,8 @@ class Enemy(character):
         self.lastright = self.right.copy()
         self.lastdir = self.direction
         #refresh the actionqueue
+        if self.iframes > 0:
+            self.iframes -= state.deltatime
         if not self.stun:
             if self.actionqueue == []:
                 self.actionqueue = deepcopy(self.behavior)
@@ -931,7 +951,7 @@ class roomLock(gameObject):
     def render(self):
         if state.gamemode == "edit":
             parallaxmod = self.parallax - state.cam.depth
-            pygame.draw.rect(state.display,(200,100,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
+            pygame.draw.rect(state.display,(200,100,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]),int(state.tilesize/2))
         
     def update(self):
         self.render()

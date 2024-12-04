@@ -13,6 +13,6 @@ import menu
 class maker:
     def make_obj(self,classname,info):
         if len(info) > 5:
-            getattr(objects,classname)(info[0],info[1],info[2],info[3],info[4],info[5])
+            return getattr(objects,classname)(info[0],info[1],info[2],info[3],info[4],info[5])
         else:
-            getattr(objects,classname)(info[0],info[1],info[2],info[3],info[4])
+            return getattr(objects,classname)(info[0],info[1],info[2],info[3],info[4])

@@ -1,8 +1,8 @@
 """
 Filename: moves.py
 Author(s): Taliesin Reese
-Version: 1.9
-Date: 11/19/2024
+Version: 1.10
+Date: 12/4/2024
 Purpose: moves to be used in "MathWiz!"
 """
 import GameData as state
@@ -95,6 +95,32 @@ def stun(caller,data):
     if not caller.stun:
         tempPallate(caller,"Stun")
         caller.stun = True
+
+def split(caller,num):
+    if "healthDivide" in caller.extras.keys():
+        caller.extras["healthDivide"] = caller.extras["healthDivide"]*num
+        caller.extras["divIterations"] += 1
+    else:
+        caller.extras["healthDivide"] = num
+        caller.extras["divIterations"] = 1
+    if caller.extras["divIterations"] <= 3:
+        for loop in range(num):
+            if type(caller).__name__!="Projectile":
+                newpos = [caller.pos[0] + caller.direction*caller.size[0]/num, caller.pos[1]]
+                caller.direction = caller.direction * (-1 ** loop)
+            else:
+                newpos = [caller.pos[0]-caller.gun.pos[0],caller.pos[1]-caller.gun.pos[1]]
+                caller.extras["angle"] = (90-(180/num*(loop+1))+(180/(num*2)))/2
+                caller.extras["flip"] = caller.direction
+            if hasattr(caller,"name"):
+                obj = state.maker.make_obj(type(caller).__name__, [newpos,caller.depth,caller.parallax,caller.name,caller.layer,caller.extras.copy()])
+            else:
+                obj = state.maker.make_obj(type(caller).__name__, [newpos,caller.depth,caller.parallax,caller.extras.copy()])
+            if type(caller).__name__!="Projectile":
+                obj.actionqueue=[[0,["nothing",None],["time",10*loop,True]]]
+                obj.iframes = 60
+                obj.damagetake(0)
+        caller.lifespan = 0
     
 def destun(caller,data):
     deTempPallate(caller,"Stun")
@@ -160,7 +186,8 @@ def weapGroove(caller,Burner):
 
 def weapDefault(caller,Burner):
     caller.shoottimer = 30
-    caller.actionqueue.append([5,["firebullet",[[0,120],caller.depth,caller.parallax,"Bustershot",caller.layer,{"parent":caller}]],[None,None,True]])
+    caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,caller.layer,{"size":[240,240],"type":"split","amt":2,"lifespan":30,"parent":caller}]],[None,None,True]])
+    #caller.actionqueue.append([5,["firebullet",[[0,120],caller.depth,caller.parallax,"Bustershot",caller.layer,{"parent":caller}]],[None,None,True]])
 
 def weapMMissile(caller,Burner):
     #caller.actionqueue.append([0,["jump",10],["keys",pygame.K_f,False]])

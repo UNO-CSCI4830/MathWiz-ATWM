@@ -24,7 +24,7 @@
     "Missile":{
         "Type":"Projectile",
         "Info":"M.Missile",
-        "Movedata":[[0,["setforce",[40,0]],["time",0,false]],[0,["addforce",[-1,0]],["time",60,false]]],
+        "Movedata":[[0,["setforce",[15,0]],["time",10,false]],[30,["split",2],[null,null,false]]],
         "dmg":50,
         "lifespan":40
     },
@@ -67,7 +67,7 @@
     "test-enemy":{
         "Type":"Enemy",
         "Info":"MathWiz",
-        "Behavior":"PatrolPacifist",
+        "Behavior":"BossWait",
         "Pallate":"Shadow",
         "WeapLimits":
         {
