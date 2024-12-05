@@ -466,6 +466,11 @@ class Sign(character):
         super().__init__(locus,depth,parallax,name, layer, extras)
         self.text = extras[0]
         #self.sprite.fill((100,100,0))
+        self.movement = [0,0]
+        self.maxfall = 0
+        self.maxspeed = 0
+        self.gravity = 0
+
     def update(self):
         super().update()
         self.animationupdate()

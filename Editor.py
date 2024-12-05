@@ -251,7 +251,7 @@ def updatetoolbar():
 
 #save levels
 def save():
-    writeTo = open((f"Leveldata\{state.Filename.get('1.0','end-1c')}.json"),'w')
+    writeTo = open((f"Leveldata\\{state.Filename.get('1.0','end-1c')}.json"),'w')
     print(state.level.depths,state.level.parallaxes)
     writeThis = {"layerdepths":state.level.depths,
                  "layerparallaxes":state.level.parallaxes,
