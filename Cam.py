@@ -5,7 +5,9 @@ Verion: 1.4
 Date: 10/26/2024
 Purpose: Camera functions and class for "MathWiz!"
 """
-import GameData as state
+# For testing purposes "import GameData as state" had to be commented out.
+# import GameData as state
+import state
 class cam:
     """
     A class to represent the camera in the game.
