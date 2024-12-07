@@ -718,6 +718,7 @@ class Sign(character):
         super().__init__(locus,depth,parallax,name, layer, extras)
         self.text = extras[0]
         #self.sprite.fill((100,100,0))
+
     def update(self):
         """
         Updates the sign, including its animation and text rendering.
@@ -806,16 +807,17 @@ class CollapsingPlatform(Platform):
         trigger : object
             The object that triggered the collision.
         """
-        if trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0 and self.collapsing == False and type(trigger) == Player:
+        if trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0:
             #self.sprite.fill((0,0,100))
             #pygame.draw.rect(self.sprite,(0,0,255),(0,0,self.size[0],20))
-            self.animname = "Break"
             trigger.grounded = True
             trigger.speed[1] = 0
             trigger.movement[1] = 0
             trigger.pos[1] = self.top[1] - trigger.size[1]
-            self.actionqueue.append([6,["collapsestart",None],["self","collapsing",True]])
-            self.actionqueue.append([60,["delete",None],[None,None,True]])
+            if self.collapsing == False and type(trigger) == Player:
+                self.animname = "Break"
+                self.actionqueue.append([6,["collapsestart",None],["self","collapsing",True]])
+                self.actionqueue.append([60,["delete",None],[None,None,True]])
             
 class Hitbox(gameObject):
     """
