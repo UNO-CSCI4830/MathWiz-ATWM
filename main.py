@@ -68,6 +68,9 @@ state.cam = Cam.cam()
 menufuncs.loadcutscene("Intro")
 
 while True:
+    """
+    Main game loop. Handles input, updates, and rendering.
+    """
     #input handling--maybe throw this into it's own file for the sake of organization?
     #newkeys is a suprise tool that will help us later
     state.newkeys = []

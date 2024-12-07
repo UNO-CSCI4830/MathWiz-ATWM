@@ -13,6 +13,13 @@ menudata = json.load(open("menus.json"))
 
 #load a menu as prescribed by the json file
 def loadmenu(menuname):
+    """
+    Loads a menu as prescribed by the JSON file.
+
+    Parameters:
+    menuname : str
+        The name of the menu to load.
+    """
     #clear all objects, resulting in their removal from memory after a while
     state.objects = []
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
@@ -25,6 +32,13 @@ def loadmenu(menuname):
         
 #load a level as prescribed by the json file
 def loadlevel(levelname):
+    """
+    Loads a level as prescribed by the JSON file.
+
+    Parameters:
+    levelname : str
+        The name of the level to load.
+    """
     #clear all objects, resulting in their removal from memory after a while
     """print(state.objects)
     for item in range(len(state.objects)):
@@ -41,6 +55,13 @@ def loadlevel(levelname):
 
 #load the cutscene player
 def loadcutscene(scenename):
+    """
+    Loads the cutscene player with the given scene name.
+
+    Parameters:
+    scenename : str
+        The name of the cutscene to load.
+    """
     #clear all objects, resulting in their removal from memory after a while
     state.objects = []
     state.deltatime = 1
