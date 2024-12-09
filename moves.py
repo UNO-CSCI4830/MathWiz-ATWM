@@ -8,7 +8,21 @@ Purpose: moves to be used in "MathWiz!"
 import GameData as state
 import pygame
 import menufuncs
+pygame.init()
+pygame.mixer.init()
 
+jump_sound = pygame.mixer.Sound("Assets/sounds/SFX/Jump.mp3")
+jump_sound.set_volume(.5)
+basic_shot_sound = pygame.mixer.Sound("Assets/sounds/SFX/Magic Shot.mp3")
+basic_shot_sound.set_volume(.5)
+flaming_shot_sound = pygame.mixer.Sound("Assets/sounds/SFX/FireShot.mp3")
+flaming_shot_sound.set_volume(.5)
+explosion_sound = pygame.mixer.Sound("Assets/sounds/SFX/Explosion.mp3")
+explosion_sound.set_volume(.5)
+hit_sound = pygame.mixer.Sound("Assets/sounds/SFX/Magic Hit.mp3")
+hit_sound.set_volume(.3)
+enemy_defeat_sound = pygame.mixer.Sound("Assets/sounds/SFX/EnemyDeath.mp3")
+enemy_defeat_sound.set_volume(.7)
 #set vertical velocity to the jumpspeed
 def jump(caller, height):
     """
@@ -21,6 +35,7 @@ def jump(caller, height):
         The height of the jump.
     """
     caller.speed[1] = -height
+    jump_sound.play()
             
 def jumpstall(caller,height):
     """
@@ -167,6 +182,7 @@ def firebullet(caller,data):
         The data for the bullet.
     """
     state.maker.make_obj("Projectile",data)
+    flaming_shot_sound.play()
 
 def stun(caller,data):
     """
@@ -182,6 +198,7 @@ def stun(caller,data):
         caller.stun = True
         caller.storepal = caller.pallate
         caller.pallate = "Stun"
+        hit_sound.play()
     
 def destun(caller,data):
     """
@@ -213,6 +230,7 @@ def weapDefault(caller,Burner):
     caller.requestanim = True
     caller.animname = "Moonwalk"
     caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,caller.layer,[[240,240],"dmg",10,30,caller]]],[None,None,True]])
+    basic_shot_sound.play()
 
 def weapMMissile(caller,Burner):
     """
@@ -272,6 +290,7 @@ def dieDefault(caller,Burner):
     for child in caller.children:
         child.delete()
     caller.delete()
+    enemy_defeat_sound.play()
 
 def diePlayer(caller,Burner):
     """
