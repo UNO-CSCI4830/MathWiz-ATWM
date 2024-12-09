@@ -2,3 +2,5 @@ When making new palattes for characters, these are the formats that should be us
 
 MathWiz:
 [Invis,Lineart,Cloak,Cloakshade,Hat,Hatshade,Glove,Gloveshade,Glasses,Glasseshighlight,Boots]
+Exponi:
+[Invis,Lineart,Cloak,Cloakshade,Trim,Trimshade,Glove,Gloveshade,Hat,Hatshade,Face,Eyes]

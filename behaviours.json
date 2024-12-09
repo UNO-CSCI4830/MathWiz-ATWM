@@ -1,3 +1,36 @@
 {
-    "Patrol":[[0,["walk",20],["time",30,null]],[30,["walk",-20],["time",30,null]]]
+    "Patrol":[
+		[0,["walk",20],["time",30,null]],
+		[30,["walk",-20],["time",30,null]],
+		[60,["firebullet",[[0,120],"spawner","spawner","Bustershot","spawner",{"parent":"spawner"}]],[null,null,true]]
+		],
+    "PatrolWhack":[
+			[0,["walk",20],["time",30,null]],
+			[30,["walk",-20],["time",30,null]],
+			[60,["hitboxon",[[120,0],"spawner","spawner","spawner",{"size":[240,240],"type":"dmg","amt":100,"lifespan":30,"parent":"spawner"}]],[null,null,true]]],
+    "PatrolPacifist":[[0,["walk",20],["time",30,null]],[30,["walk",-20],["time",30,null]]],
+    "BossWait":[],
+    "TestBoss":[[60,["hitboxon",[[120,0],"spawner","spawner","spawner",{"size":[240,240],"type":"dmg","amt":100,"lifespan":30,"parent":"spawner"}]],[null,null,true]]],
+    "ExpoBoss":[
+		[0,["walkdir",10],["time",30,null]],
+		[30,["doiftargetleft",["setflip",-1]],[null,null,false]],
+		[30,["doiftargetright",["setflip",1]],[null,null,false]],
+		[30,["jump",75],[null,null,null]],
+		[31,["walkdir",10],["time",30,null]],
+		[62,["nothing",null],["time",30,null]],
+		[60,["firebullet",[[0,0],"spawner","spawner","Missile","spawner",{"parent":"spawner","maxdiv":"2"}]],[null,null,true]]
+		],
+    "Seek":[
+		[0,["walkdir",5],["time",30,null]],
+		[0,["doiftargetleft",["setflip",-1]],[null,null,false]],
+		[0,["doiftargetright",["setflip",1]],[null,null,false]],
+		[0,["doiftargetabove",["jump",50]],[null,null,false]]
+		],
+    "JumpShoot":[
+		[0,["doiftargetleft",["setflip",-1]],[null,null,false]],
+		[0,["doiftargetright",["setflip",1]],[null,null,false]],
+		[0,["nothing",null],["time",120,null]],
+		[60,["jump",60],[null,null,null]],
+		[85,["firebullet",[[0,120],"spawner","spawner","Bustershot","spawner",{"parent":"spawner"}]],[null,null,true]]
+		]
 }

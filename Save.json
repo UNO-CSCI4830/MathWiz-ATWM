@@ -1,7 +1,7 @@
 {
     "1":{
         "playerweaps":["Default","MMissile"],
-        "displaysize":800,
+        "displaysize":[900,900],
         "movetickamount":110,
         "adjustdeltatime":true
     }
