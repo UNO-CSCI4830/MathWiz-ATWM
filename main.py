@@ -78,6 +78,9 @@ state.cam = Cam.cam()
 menufuncs.loadcutscene("Intro")
 
 while True:
+    """
+    Main game loop. Handles input, updates, and rendering.
+    """
     #calculate deltatime. This is used to augment certain values and keep the speed of things independent from the framerate
     if state.adjustdeltatime:
         state.deltatime = state.fpsTarget*state.clock.get_time()/(1000*state.timeslow)

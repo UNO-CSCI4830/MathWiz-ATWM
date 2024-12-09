@@ -14,7 +14,41 @@ import random
 
 #this class defines the levels that the player will traverse.
 class level:
+    """
+    A class to represent a level in the game.
+
+    Attributes:
+    name : str
+        The name of the level.
+    datafile : dict
+        The JSON data of the level.
+    depths : list
+        The depth of each layer in the level.
+    parallaxes : list
+        The parallax values of each layer in the level.
+    loops : list
+        The loop settings of each layer in the level.
+    tilemap : list
+        The tile map of the level.
+    flipmap : list
+        The flip map of the level.
+    spinmap : list
+        The rotation map of the level.
+    pallatemap : list
+        The palette map of the level.
+    objs : list
+        The objects in the level.
+    animationlist : list
+        The animations in the level.
+    """
     def __init__(self,name):
+        """
+        Initializes the level with the given name.
+
+        Parameters:
+        name : str
+            The name of the level.
+        """
         self.name = name
         self.datafile = json.load(open(f"Leveldata/{name}.json"))
         self.depths = self.datafile["layerdepths"]
@@ -53,7 +87,61 @@ class level:
         
 #This class is used for the rendering of levels. Each one represents a depth layer of a level that will be rendered in the appropriate order
 class drawlayer:
+    """
+    A class to represent a depth layer of a level for rendering.
+
+    Attributes:
+    level : level
+        The level to which this layer belongs.
+    layernum : int
+        The layer number.
+    longest : int
+        The longest row in the layer.
+    tallest : int
+        The tallest column in the layer.
+    width : int
+        The width of the layer in pixels.
+    height : int
+        The height of the layer in pixels.
+    workcanvas : pygame.Surface
+        The surface to draw the layer on.
+    brush : pygame.Surface
+        The surface to draw individual tiles on.
+    colorbrush : pygame.Surface
+        The surface to apply color changes to tiles.
+    brushval : int
+        The current tile value of the brush.
+    brushpal : int
+        The current palette value of the brush.
+    flipx : bool
+        Whether the brush is flipped horizontally.
+    flipy : bool
+        Whether the brush is flipped vertically.
+    rotate : int
+        The rotation of the brush in degrees.
+    loop : bool
+        Whether the layer loops.
+    depth : int
+        The depth of the layer.
+    parallax : float
+        The parallax value of the layer.
+    animationlist : list
+        The animations in the layer.
+    animtimers : list
+        The timers for each animation.
+    animframes : list
+        The current frame of each animation.
+    """
     def __init__(self,level,layernum):
+        """
+        Initializes the drawlayer with the given level and layer number.
+
+        Parameters:
+        level : level
+            The level to which this layer belongs.
+        layernum : int
+            The layer number.
+        """
         self.level = level
         self.layernum = layernum
         self.calcsize()
@@ -87,6 +175,9 @@ class drawlayer:
         self.render()
         
     def render(self):
+        """
+        Renders the layer by drawing each tile to the workcanvas.
+        """
         self.workcanvas.fill((0,0,0))
         #iterate through every row of tiles, and every tile.
         for row in range(len(self.level.tilemap[self.layernum])):
@@ -98,6 +189,9 @@ class drawlayer:
                 self.tileupdate(row,tile,tileinfo,tilenum,pallatenum)
 
     def calcsize(self):
+        """
+        Calculates the size of the layer in pixels.
+        """
         #find the longest row in the layer
         self.longest = 0
         for row in self.level.tilemap[self.layernum]:
@@ -114,6 +208,21 @@ class drawlayer:
             self.workcanvas.set_colorkey(state.invis)
             
     def tileupdate(self,row,tile,tileinfo,tilenum,pallatenum):
+        """
+        Updates the tile at the given position with the given information.
+
+        Parameters:
+        row : int
+            The row of the tile.
+        tile : int
+            The column of the tile.
+        tileinfo : dict
+            The information of the tile.
+        tilenum : int
+            The number of the tile.
+        pallatenum : int
+            The palette number of the tile.
+        """
         if tilenum != self.brushval or pallatenum != self.brushpal:
             self.brush.fill(state.invis)
             #print(row,tile,tileinfo,tilenum,pallatenum)
@@ -171,6 +280,9 @@ class drawlayer:
         self.workcanvas.blit(pygame.transform.flip(pygame.transform.rotate(self.brush,self.rotate),self.flipx,self.flipy),(tile*state.tilesize*state.scaleamt,row*state.tilesize*state.scaleamt))
 
     def animlistrecalc(self):
+        """
+        Recalculates the animation list for the layer.
+        """
         self.animationlist = self.level.animationlist[self.layernum]
         self.animtimers = []
         self.animframes = []
@@ -179,6 +291,9 @@ class drawlayer:
             self.animframes.append(0)
             
     def update(self):
+        """
+        Updates the layer, including tile animations and parallax scrolling.
+        """
         #update tile animations
         #print(self.animationlist)
         for timer in range(len(self.animtimers)):

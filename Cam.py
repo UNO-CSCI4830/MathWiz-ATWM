@@ -7,7 +7,26 @@ Purpose: Camera functions and class for "MathWiz!"
 """
 import GameData as state
 class cam:
+    """
+    A class to represent the camera in the game.
+
+    Attributes:
+    focus: list
+        The focus point of the camera.
+    pos: tuple
+        Current position of the camera.
+    lastpos: tuple
+        Previous position of the camera.
+    depth: int
+        The depth of the camera.
+    focusobj: object
+        The object that the camera is focused on.
+    """
+
     def __init__(self):
+        """
+        Initializes the camera with default values.
+        """
         self.focus = [state.screensize[0]/2,state.screensize[1]/2]
         self.pos = (0,0)
         self.lastpos = (0,0)
@@ -15,6 +34,10 @@ class cam:
         self.focusobj = None
         self.locks = []
     def update(self):
+        """
+        Updates the camera's position and focus based on the focus object.
+        Ensures that the camera does not expose void areas.
+        """
         self.lastpos = self.pos
         #set focus and depth such that the focus object will always be in the center
         if self.focusobj != None:

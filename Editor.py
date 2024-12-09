@@ -47,6 +47,9 @@ state.level = level.level("blank")
 
 #main loop
 def main():
+    """
+    Main lopp for the level editor. Handles rendering, input, and updates.
+    """
     #create stuff for modification
     state.editloops = [[False,False]]
     state.layercount = len(state.level.tilemap)
@@ -121,6 +124,9 @@ def main():
                 pygame.quit()
                 quit()
 def move():
+    """
+    Moves the camera based on keyboard input.
+    """
     if state.keys[pygame.K_a]:
         state.cam.focus[0] -= state.tilesize
     if state.keys[pygame.K_d]:
@@ -132,6 +138,12 @@ def move():
         
 #create toolbox
 def createtoolbox():
+    """
+    Creates the toolbox window for the level editor.
+
+    Returns: 
+    tkinter.Tk(): The toolbox window
+    """
     toolbar = tkinter.Tk()
     toolbar.title("Toolbox")
     #populate toolbar with universal options
@@ -228,6 +240,9 @@ def createtoolbox():
     return toolbar
 
 def updatetoolbar():
+    """
+    Updates the toolbar based on the selected tool.
+    """
     try:
         if state.toolvar.get() != state.toolvarlast:
             state.toolvarlast = state.toolvar.get()
@@ -270,7 +285,10 @@ def updatetoolbar():
 
 #save levels
 def save():
-    writeTo = open((f"Leveldata\{state.Filename.get('1.0','end-1c')}.json"),'w')
+    """
+    Saves the current level to a JSON file. 
+    """
+    writeTo = open((f"Leveldata\\{state.Filename.get('1.0','end-1c')}.json"),'w')
     print(state.level.depths,state.level.parallaxes)
     writeThis = {"layerdepths":state.level.depths,
                  "layerparallaxes":state.level.parallaxes,
@@ -286,6 +304,9 @@ def save():
     
 #load levels
 def load():
+    """
+    Loads a level from a JSON file.
+    """
     levelname = state.Filename.get('1.0','end-1c')
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
     state.Layerswitch.delete(0,"end")
@@ -319,6 +340,9 @@ def load():
         
 #new levels
 def new():
+    """
+    Creates a new blank level.
+    """
     state.objects = []
     state.editobjs = []
     state.level = level.level("blank")
@@ -333,6 +357,9 @@ def new():
         state.LoopBtnY.deselect()
 
 def setlayer():
+    """
+    Sets the current layer based on the layer switch.
+    """
     try:
         num = int(state.Layerswitch.get())
     except:
@@ -369,6 +396,9 @@ def setlayerloopy():
         state.editloops[state.renderlayer][1] = True
         
 def setlayerdepth():
+    """
+    Sets the depth of the current layer based on the depth switch.
+    """
     print(state.renderdepth)
     try:
         num = int(float(state.Depthswitch.get()))
@@ -379,6 +409,9 @@ def setlayerdepth():
     print(state.renderdepth)
 
 def setlayerparallax():
+    """
+    Sets the parallax of the current layer on the parallax switch.
+    """
     try:
         num = float(state.Parallaxswitch.get())
     except:
@@ -388,6 +421,17 @@ def setlayerparallax():
 
 
 def draw(canvasarray,tile,value):
+    """
+    Draws a value to a specific tile in the canvas array.
+
+    Parameters:
+    canvasarray: list
+        The canvas array to draw on.
+    tile: list
+        The tile coordinates to draw on.
+    value: int
+        The value to draw.
+    """
     canvasarray[state.renderlayer][tile[1]][tile[0]] = value
 
 def addExtra():
@@ -410,6 +454,12 @@ def cutExtra():
         state.extrasbox.insert(f"{name}:{data}")
 
 def blank():
+    """
+    Returns a blank tilemap.
+
+    Returns:
+    list: A blank tilemap.
+    """
     return [
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -443,6 +493,18 @@ def blank():
     [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
     
 def blockdrawupdate():
+    """
+    Updates the drawing of blocks based on the current state of the mouse and click actions.
+    This function handles the following:
+    - Calculates the tile position based on the mouse position and camera parallax.
+    - Draws a green rectangle at the current mouse position.
+    - Handles left-click to draw a block of the selected type.
+    - Handles right-click to erase a block.
+    - Handles middle-click to select a group of tiles for drawing.
+    The function also updates the state to reflect changes in the level and handles out-of-bounds errors.
+    Raises:
+        Exception: If the block placement or erasure is out of bounds.
+    """
     tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     #print(tile)
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
@@ -493,6 +555,19 @@ def blockdrawupdate():
             state.groupselect = [[],[]]
 
 def colordrawupdate():
+    """
+    Updates the drawing on the screen based on the current mouse position and click state.
+    This function performs the following tasks:
+    - Calculates the tile position based on the mouse position and camera position.
+    - Draws a green rectangle at the current mouse position.
+    - If the left mouse button is clicked, it updates the color palette selection and draws the selected color on the tile.
+    - If the right mouse button is clicked, it handles group selection of tiles and draws a green rectangle around the selected group.
+    - If the right mouse button is released, it colors all tiles within the selected group.
+    Exceptions:
+    - Handles out-of-bounds errors when trying to color tiles.
+    - Handles errors when trying to select a color from the palette.
+    """
+    
     tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     #print(tile)
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
@@ -537,6 +612,18 @@ def colordrawupdate():
             state.groupselect = [[],[]]
 
 def flipdrawupdate():
+    """
+    Updates the drawing on the screen based on the current mouse position and click state.
+    
+    This function calculates the tile position based on the mouse coordinates and camera position, then draws a green rectangle at the 
+    calculated tile position. It also handles mouse click events to flip the state of the tile in the level's flipmap.
+
+    If the left mouse button is clicked, the tile state is toggled between 0 and 1, or 2 and 3.
+    If the right mouse button is clicked, the tile state is toggled between 0 and 3, or 1 and 2.
+    
+    Raises:
+        Exception: If the tile position is out of bounds.
+    """
     tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
     pygame.draw.rect(state.display,(0,255,0),(locusupdate[0],locusupdate[1],state.tilesize,state.tilesize),10)
@@ -576,6 +663,17 @@ def flipdrawupdate():
             print("Cannot flip, Out of Bounds")
 
 def spindrawupdate():
+    """
+    Updates the drawing of a tile based on the current mouse position and click state.
+
+    This function calculates the tile position based on the mouse coordinates and camera position,
+    then draws a green rectangle around the tile. If the left mouse button is clicked, it attempts
+    to update the tile's state in the spinmap, cycling through values 0 to 3. If the tile is out of
+    bounds, an exception is caught and an error message is printed.
+
+    Raises:
+        Exception: If the tile is out of bounds.
+    """
     tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
     pygame.draw.rect(state.display,(0,255,0),(locusupdate[0],locusupdate[1],state.tilesize,state.tilesize),10)
@@ -592,6 +690,15 @@ def spindrawupdate():
             print("Cannot spin, Out of Bounds")
 
 def rowaddupdate():
+    """
+    Updates the height of rows in the game level based on user input.
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
     rows = int(state.addamt.get())
     tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     #print(tile)
@@ -605,6 +712,20 @@ def rowaddupdate():
         state.levelchanged = True
 
 def coladdupdate():
+    """
+    Updates the column width of tiles based on user input and mouse position.
+
+    This function performs the following steps:
+    1. Retrieves the number of columns to add or remove from the state.
+    2. Calculates the tile position based on the mouse position and camera offset.
+    3. Draws a green rectangle on the display to indicate the current tile column being modified.
+    4. If the left mouse button is clicked, it adds the specified number of columns to the tile.
+    5. If the right mouse button is clicked, it removes the specified number of columns from the tile.
+    6. Sets the levelchanged flag to True if any modification is made.
+
+    Returns:
+        None
+    """
     cols = int(state.addamt.get())
     tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     #print(tile)
@@ -618,6 +739,22 @@ def coladdupdate():
         state.levelchanged = True
 
 def animaddupdate():
+    """
+    Updates the animation state based on mouse input and current selection.
+
+    This function performs the following tasks:
+    1. Calculates the tile position based on the mouse position and camera parallax.
+    2. Draws a green rectangle at the calculated tile position.
+    3. Updates the selected animation based on the current selection in the animation list.
+    4. If the left mouse button is clicked:
+        - Removes any conflicting animation on the selected tile.
+        - Adds the selected animation to the animation list for the current render layer.
+        - Recalculates the animation list for the draw layer.
+        - Marks the level as changed.
+    5. If the right mouse button is clicked:
+        - Removes any animation on the selected tile.
+        - Marks the level as changed and recalculates the animation list for the draw layer if necessary.
+    """
     tile = [int((state.mouse[0]+state.cam.pos[0]*state.parallaxmod)//state.tilesize),int((state.mouse[1]+state.cam.pos[1]*state.parallaxmod)//state.tilesize)]
     locusupdate = [int(state.mouse[0]//state.tilesize)*state.tilesize,int(state.mouse[1]//state.tilesize)*state.tilesize]
     pygame.draw.rect(state.display,(0,255,0),(locusupdate[0],locusupdate[1],state.tilesize,state.tilesize),10)
@@ -655,6 +792,18 @@ def animaddupdate():
                         item.animlistrecalc()
 
 def itemaddupdate():
+    """
+    Handles the adding/removing of objects in the editor based on mouse interactions.
+
+    This function performs the following actions:
+    - Adjusts the mouse position based on the camera position and parallax modifier.
+    - Retrieves additional parameters for the object from the extras text field.
+    - On a new left-click, places the selected object at the adjusted mouse position and updates the state.
+    - On a new right-click, removes the object at the adjusted mouse position if it matches certain criteria and updates the state.
+
+    Raises:
+        Exception: If there is an error retrieving the extras parameters.
+    """
     posadj = [state.mouse[0]+state.cam.pos[0]*state.parallaxmod,state.mouse[1]+state.cam.pos[1]*state.parallaxmod]
     try:
         extras = state.extras.copy()
@@ -694,6 +843,16 @@ def itemaddupdate():
                     break
 
 def addheight(target, rowstoadd):
+    """
+    Adds a specified number of rows to the tilemap, pallatemap, spinmap, and flipmap at the specified target position.
+
+    Args:
+        target (tuple): A tuple containing the coordinates (x, y) where the rows should be added.
+        rowstoadd (int): The number of rows to add.
+
+    Returns:
+        None
+    """
     #find longest row in level tileset
     longest = 0
     for row in state.level.tilemap[state.renderlayer]:
@@ -713,6 +872,17 @@ def addheight(target, rowstoadd):
             object.calcsize()
 
 def removeheight(target,rowstocut):
+    """
+    Removes a specified number of rows from the tilemap, pallatemap, spinmap, and flipmap 
+    at the given target position in the current render layer.
+
+    Args:
+        target (tuple): A tuple containing the coordinates (x, y) of the target position.
+        rowstocut (int): The number of rows to remove starting from the target position.
+
+    Returns:
+        None
+    """
     #delete rows at and following the current one
     del state.level.tilemap[state.renderlayer][target[1]:target[1]+rowstocut]
     del state.level.pallatemap[state.renderlayer][target[1]:target[1]+rowstocut]
@@ -720,6 +890,16 @@ def removeheight(target,rowstocut):
     del state.level.flipmap[state.renderlayer][target[1]:target[1]+rowstocut]
 
 def addwidth(target, colstoadd):
+    """
+    Adds columns to the tilemap, pallatemap, spinmap, and flipmap at the specified target index for the current render layer.
+
+    Args:
+        target (tuple): A tuple containing the index at which to insert the new columns.
+        colstoadd (int): The number of columns to add.
+
+    Returns:
+        None
+    """
     #add values into all the rows
     for row in range(len(state.level.tilemap[state.renderlayer])):
         for iteration in range(colstoadd):
@@ -732,6 +912,17 @@ def addwidth(target, colstoadd):
             object.calcsize()
 
 def removewidth(target,colstocut):
+    """
+    Remove a specified number of columns from the tilemap, pallatemap, spinmap, and flipmap 
+    starting from a target column for every row in the current render layer.
+
+    Args:
+        target (tuple): A tuple containing the starting column index from which columns will be removed.
+        colstocut (int): The number of columns to remove.
+
+    Returns:
+        None
+    """
     #delete tiles from every row at and following the current one
     for row in range(len(state.level.tilemap[state.renderlayer])):
         del state.level.tilemap[state.renderlayer][row][target[0]:target[0]+colstocut]
@@ -740,6 +931,12 @@ def removewidth(target,colstocut):
         del state.level.flipmap[state.renderlayer][row][target[0]:target[0]+colstocut]
     
 def addLayer():
+    """
+    Adds a new layer to the current state and updates all relevant properties.
+
+    Returns:
+        None
+    """
     num = state.renderlayer
     for item in state.objects:
         if type(item) == level.drawlayer:
