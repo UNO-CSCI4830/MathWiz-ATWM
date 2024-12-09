@@ -49,8 +49,8 @@ class MenuObj:
         self.text = text
         self.func = funcname
         self.funcargs = assets
-        self.canvas = pygame.Surface(self.size)
-        self.graphics = pygame.Surface(self.size)
+        self.canvas = pygame.Surface([self.size[0]*state.scaleamt,self.size[1]*state.scaleamt])
+        self.graphics = pygame.Surface([self.size[0]*state.scaleamt,self.size[1]*state.scaleamt])
         self.now = 0
         self.last = pygame.time.get_ticks()
         #add self to list of objects to be rendered
@@ -74,16 +74,16 @@ class MenuObj:
                 self.onHover()
         else:
             if self.graphicsdata != None:
-                self.graphics = pygame.Surface(self.graphicsdata[2:4])
-                self.graphics.blit(state.menusheet,(0,0),self.graphicsdata[:4])
-                self.canvas.blit(pygame.transform.scale(self.graphics,self.size),(0,0))
+                self.graphics = pygame.Surface([self.graphicsdata[2]*state.scaleamt,self.graphicsdata[3]*state.scaleamt])
+                self.graphics.blit(state.menusheet,(0,0),[self.graphicsdata[0]*state.scaleamt,self.graphicsdata[1]*state.scaleamt,self.graphicsdata[2]*state.scaleamt,self.graphicsdata[3]*state.scaleamt])
+                self.canvas.blit(pygame.transform.scale(self.graphics,[self.size[0]*state.scaleamt,self.size[1]*state.scaleamt]),(0,0))
             else:
                 self.canvas.fill((0,255,0))
-        state.display.blit(self.canvas,(self.pos[0]-state.cam.pos[0],self.pos[1]-state.cam.pos[1]))
+        state.display.blit(self.canvas,((self.pos[0]-state.cam.pos[0])*state.scaleamt,(self.pos[1]-state.cam.pos[1])*state.scaleamt))
         text = state.font.render(self.text,False,(0,0,90))
         #draw to the canvas
-        state.display.blit(text,((self.pos[0]-state.cam.pos[0]+(self.size[0]/2)-(text.get_width()/2)),(self.pos[1]-state.cam.pos[1]+(self.size[1]/2)-(text.get_height()/2))))
-    
+
+        state.display.blit(text,(((self.pos[0]-state.cam.pos[0])*state.scaleamt+(self.size[0]*state.scaleamt/2)-(text.get_width()*state.scaleamt/2)),((self.pos[1]-state.cam.pos[1])*state.scaleamt+(self.size[1]*state.scaleamt/2)-(text.get_height()*state.scaleamt/2))))
     def onClick(self):
         """
         Handles the click event for the menu object.
@@ -101,9 +101,9 @@ class MenuObj:
         Handles the hover event for the menu object.
         """
         if self.graphicsdata != None:
-            self.graphics = pygame.Surface(self.graphicsdata[6:])
-            self.graphics.blit(state.menusheet,(0,0),self.graphicsdata[4:8])
-            self.canvas.blit(pygame.transform.scale(self.graphics,self.size),(0,0))
+            self.graphics = pygame.Surface([self.graphicsdata[6]*state.scaleamt,self.graphicsdata[7]*state.scaleamt])
+            self.graphics.blit(state.menusheet,(0,0),[self.graphicsdata[4]*state.scaleamt,self.graphicsdata[5]*state.scaleamt,self.graphicsdata[6]*state.scaleamt,self.graphicsdata[7]*state.scaleamt])
+            self.canvas.blit(pygame.transform.scale(self.graphics,[self.size[0]*state.scaleamt,self.size[1]*state.scaleamt]),(0,0))
         else:
             self.canvas.fill((255,0,0))
 

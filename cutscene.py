@@ -56,7 +56,7 @@ class cutscenePlayer:
             pygame.mixer.music.play()
         if returnval == True and (True not in state.keys):
             #convert to a pygame image
-            self.frame.blit(pygame.transform.scale(pygame.image.frombuffer(rawimage.tostring(),rawimage.shape[1::-1],"BGR"),[state.screensize[0],state.screensize[1]]),(0,0))
+            self.frame.blit(pygame.transform.scale(pygame.image.frombuffer(rawimage.tostring(),rawimage.shape[1::-1],"BGR"),[state.screensize[0]*state.scaleamt,state.screensize[1]*state.scaleamt]),(0,0))
             #draw to screen
             state.display.blit(self.frame,(0,0))
         else:
