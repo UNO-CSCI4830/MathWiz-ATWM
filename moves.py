@@ -23,12 +23,25 @@ def jumpstall(caller,height):
         caller.speed[1] -= (caller.gravity/2)*state.deltatime/2
         caller.nextspeedadj[1] -= (caller.gravity/2)*state.deltatime/2
 
+def flip(caller,Burner):
+    caller.direction = caller.flip * -1
+
+def setflip(caller,flipset):
+    caller.direction = flipset
+
 #add the walk speed to the character, unless the speed exceeds maxspeed.
 def walk(caller,speed):
     caller.speed[0] += speed*state.deltatime/2
     caller.nextspeedadj[0] += speed*state.deltatime/2
     if abs(caller.speed[0]) > caller.maxspeed[0]:
         caller.speed[0] = caller.maxspeed[0]*(caller.speed[0]/abs(caller.speed[0]))
+
+#like normal walk, but adjusts for direction
+def walkdir(caller,speed):
+    caller.speed[0] += speed*caller.direction*state.deltatime/2
+    caller.nextspeedadj[0] += speed*caller.direction*state.deltatime/2
+    if abs(caller.speed[0]) > caller.maxspeed[0]:
+        caller.speed[0] = caller.maxspeed[0]*caller.direction
         
 def setforce(caller,force):
     if force[0] != None:
@@ -55,6 +68,18 @@ def addforce(caller,force):
     caller.nextspeedadj[0]+=force[0]*state.deltatime/2
     caller.nextspeedadj[1]+=force[1]*state.deltatime/2
 
+def doiftargetleft(caller,data):
+    if caller.target.right[0] < caller.left[0]:
+        globals()[data[0]](caller,data[1])
+
+def doiftargetright(caller,data):
+    if caller.target.left[0] > caller.right[0]:
+        globals()[data[0]](caller,data[1])
+
+def doiftargetabove(caller,data):
+    if caller.target.bottom[1] < caller.top[1]:
+        globals()[data[0]](caller,data[1])
+
 def collapsestart(caller,Nix):
     caller.collapsing = True
     
@@ -65,7 +90,6 @@ def loadnextstate(caller,data):
     getattr(menufuncs,f"load{data[0]}")(data[1])
 
 def hitboxon(caller,data):
-    print(data)
     if data[4]["parent"] == "spawner":
         data[4]["parent"] = caller
     if data[1] == "spawner":
@@ -90,6 +114,7 @@ def firebullet(caller,data):
     if caller.shotLimits.get(data[3])!= None:
         if caller.bulletCounts[data[3]] < caller.shotLimits[data[3]]:
             state.maker.make_obj("Projectile",data)
+            caller.shoottimer = 30
 
 def stun(caller,data):
     if not caller.stun:
@@ -103,12 +128,16 @@ def split(caller,num):
     else:
         caller.extras["healthDivide"] = num
         caller.extras["divIterations"] = 1
-    if caller.extras["divIterations"] <= 3:
+    if hasattr(caller.extras,"maxdiv"):
+        max = caller.extras["maxdiv"]
+    else:
+        max = 3
+    if caller.extras["divIterations"] <= max:
         for loop in range(num):
-            if type(caller).__name__!="Projectile":
+            if type(caller).__name__=="Enemy":
                 newpos = [caller.pos[0] + caller.direction*caller.size[0]/num, caller.pos[1]]
                 caller.direction = caller.direction * (-1 ** loop)
-            else:
+            elif type(caller).__name__ =="Projectile":
                 newpos = [caller.pos[0]-caller.gun.pos[0],caller.pos[1]-caller.gun.pos[1]]
                 caller.extras["angle"] = (90-(180/num*(loop+1))+(180/(num*2)))/2
                 caller.extras["flip"] = caller.direction
@@ -152,7 +181,7 @@ def nothing(caller, nothing):
 
 def levelStart(caller,Burner):
     if type(caller).__name__ == "Player":
-        state.HUD.blit(state.font.render(f"Get Ready",False,[255,255,255],[0,0,0]),(1800,1800))
+        state.HUD.blit(state.font.render(f"Get Ready",False,[255,255,255],[0,0,0]),(1800*state.scaleamt,1800*state.scaleamt))
 
 def particleSpawn(caller,data):
     #when inserting particles using this function, format thusly:
@@ -176,8 +205,10 @@ def particleSpawn(caller,data):
         particleinfo.extend(data[1][frame][1:])
         fullparticles[frame] = particleinfo
     state.particleManager.particles[caller.layer].append(deepcopy([data[0],fullparticles,data[2],data[3],data[4],0,0,data[5]]))
-    
-    
+
+def timeslowset(caller,amt):
+    state.timeslow = amt
+
 #attacks
 def weapGroove(caller,Burner):
     caller.requestanim = True
@@ -186,17 +217,22 @@ def weapGroove(caller,Burner):
 
 def weapDefault(caller,Burner):
     caller.shoottimer = 30
+    caller.actionqueue.append([5,["firebullet",[[0,120],caller.depth,caller.parallax,"Bustershot",caller.layer,{"parent":caller}]],[None,None,True]])
+
+def weapDivSlice(caller,Burner):
+    caller.shoottimer = 30
     caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,caller.layer,{"size":[240,240],"type":"split","amt":2,"lifespan":30,"parent":caller}]],[None,None,True]])
-    #caller.actionqueue.append([5,["firebullet",[[0,120],caller.depth,caller.parallax,"Bustershot",caller.layer,{"parent":caller}]],[None,None,True]])
 
 def weapMMissile(caller,Burner):
-    #caller.actionqueue.append([0,["jump",10],["keys",pygame.K_f,False]])
+    #caller.actionqueue.append([0,["jump",10],["keys",pygame.K_f,False]])caller.shoottimer = 30
+    caller.shoottimer = 30
     caller.actionqueue.append([5,["firebullet",[[120,0],caller.depth,caller.parallax,"Missile",caller.layer,{"parent":caller}]],[None,None,True]])
 
 def weapdirtycheaterpower(caller,Burner):
     caller.requestanim = True
     caller.animname = "Moonwalk"
     print("I LOL'D")
+
 #death functions
 def dieDefault(caller,Burner):
     for child in caller.children:
@@ -212,6 +248,9 @@ def diePlayer(caller,Burner):
     camunlock(caller,Burner)
 
 def dieBoss(caller,Burner):
+    caller.actionqueue = [[0,["jump",50],[None,None,True]],[0,["timeslowset",4],[None,None,True]],[60,["timeslowset",1],[None,None,True]]]
+    caller.behavior = state.aisource["BossWait"]
+
     if caller.target != None:
         caller.target.stun = True
         caller.target.speed[0] = 0
@@ -219,6 +258,21 @@ def dieBoss(caller,Burner):
         caller.target.requestanim = True
         caller.target.actionqueue.append([120,["loadnextstate",["cutscene","outro"]],[None,None,True]])
 
+def dieEnemy(caller,Burner):
+    particleSpawn(caller,[caller.pos,
+                      [["DieCloud1",0,0,0,5],
+                       ["DieCloud2",0,0,0,10],
+                       ["DieCloud3",0,0,0,15],
+                       ["DieCloud4",0,0,0,5],
+                       ["DieCloud5",0,0,0,5],
+                       ["DieCloud6",0,0,0,5],
+                       ["DieCloud7",0,0,0,10],
+                       ["DieCloud8",0,0,0,15]],
+                      [0,0],[0,0],[0,0],70])
+    for child in caller.children:
+        child.delete()
+    camunlock(caller,Burner)
+    caller.delete()
 def diePlat(caller,particlename):
     particleSpawn(caller,[[caller.left[0],caller.top[1]],
                       [[particlename,0,0,0,10],

@@ -19,7 +19,7 @@ def loadmenu(menuname):
     import menu
     for entity in state.menudata[menuname]:
         menu.MenuObj(entity[0],entity[1],entity[2],entity[3],entity[4],entity[5], entity[6])
-    state.deltatime = 1
+    state.clock.tick()
         
 #load a level as prescribed by the json file
 def loadlevel(levelname):
@@ -43,7 +43,7 @@ def loadlevel(levelname):
             item.actionqueue.append([0,[f"levelStart",None],["time",90,None]])
             item.stun = True
             item.actionqueue.append([90,["destun",None],[None,None,None]])
-    state.deltatime = 2
+    state.clock.tick()
 
 #load the cutscene player
 def loadcutscene(scenename):
@@ -54,7 +54,7 @@ def loadcutscene(scenename):
     state.cam.locks = []
     import cutscene
     cutscene.cutscenePlayer(scenename)
-    state.deltatime = 1
+    state.clock.tick()
     
 #nothing
 def nothing(nothing):

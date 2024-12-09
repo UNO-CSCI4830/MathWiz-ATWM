@@ -43,10 +43,15 @@ class gameObject:
     def delete(self):
         try:
             state.objects.remove(self)
-            if state.camera.focusobj == self:
-                state.camera.focusobj = None
+            if state.cam.focusobj == self:
+                state.cam.focusobj = None
         except:
             pass
+
+    def checkupdatedist(self):
+        dist = math.sqrt((state.cam.pos[0]+(state.screensize[0]/2)-self.pos[0])**2+(state.cam.pos[1]+(state.screensize[1]/2)-self.pos[1])**2)
+        if dist <= 3600:
+            return True
             
     #calcualte the points to use in collision detection
     def getpoints(self):
@@ -68,8 +73,8 @@ class character(gameObject):
         else:
             self.direction = 1
         self.lastdirection = 1
-        self.maxspeed = [20,50]
-        self.gravity = 10
+        self.maxspeed = [20,75,-100]
+        self.gravity = 5
         self.grounded = True
         self.actiontimer = 0
         self.blockable = False
@@ -84,8 +89,8 @@ class character(gameObject):
         
         self.size = self.info["Sizes"]["Default"]
         #sprite used to show player. Replace these calls with animation frame draws
-        self.sprite = pygame.Surface(self.size)
-        self.colorbrush = pygame.Surface(self.size)
+        self.sprite = pygame.Surface([self.size[0]*state.scaleamt,self.size[1]*state.scaleamt])
+        self.colorbrush = pygame.Surface([self.size[0]*state.scaleamt,self.size[1]*state.scaleamt])
         self.sprite.set_colorkey(state.invis)
         self.pallate = "Default"
         self.storepal = None
@@ -161,6 +166,8 @@ class character(gameObject):
                 action[0] -= state.deltatime
             #otherwise, do the thing.
             else:
+                if type(self) ==Boss and action[1][0] == "jump":
+                    print(action[1][0],self.speed,self.grounded)
                 getattr(moves,action[1][0])(self, action[1][1])
                 #if the action's popcondidtion is met, pull it from the queue and skip.
                 match action[2][0]:
@@ -216,8 +223,8 @@ class character(gameObject):
             #adjust the size of the canvas if the sprite size is different.
             if self.size != frame[2:4]:
                 self.size = frame[2:4]
-                self.sprite = pygame.Surface(self.size)
-                self.colorbrush = pygame.Surface(self.size)
+                self.sprite = pygame.Surface([self.size[0]*state.scaleamt,self.size[1]*state.scaleamt])
+                self.colorbrush = pygame.Surface([self.size[0]*state.scaleamt,self.size[1]*state.scaleamt])
                 self.sprite.set_colorkey(state.invis)
                 self.sprite.fill(state.invis)
                 #also, adjust position to match around a center point.
@@ -226,7 +233,7 @@ class character(gameObject):
                     self.pos[1] += self.lastframe[3]-self.size[1]
                 else:
                     self.pos[1] += self.lastframe[7]-center[1]
-            self.sprite.blit(state.spritesheet, frame[4:6],(frame[:4]))
+            self.sprite.blit(state.spritesheet, [frame[4]*state.scaleamt,frame[5]*state.scaleamt],([frame[0]*state.scaleamt,frame[1]*state.scaleamt,frame[2]*state.scaleamt,frame[3]*state.scaleamt]))
             self.sprite = pygame.transform.rotate(pygame.transform.flip(self.sprite,anim[self.animframe][1][0],anim[self.animframe][1][1]),anim[self.animframe][2])
             #pygame.draw.rect(self.sprite,(255,255,255),(0,center[1],240,10))
             #get the sprite drawn with the correct palatte
@@ -307,6 +314,10 @@ class character(gameObject):
                 pass
             self.speed[1] += self.gravity*state.deltatime/2
             self.nextspeedadj[1] += self.gravity*state.deltatime/2
+            if self.speed[1] >= self.maxspeed[1]:
+                self.speed[1] = self.maxspeed[1]
+            elif self.speed[1] <= self.maxspeed[2]:
+                self.speed[1] = self.maxspeed[2]
         #otherwise, don't add gravity at all. doing so would cause the player to gain fallspeed while they stood, and causes them to fall like a ton of bricks if the ground ceases to hold them (i.e. they walk off a ledge)
         else:
             self.speed[1] = 0
@@ -333,12 +344,16 @@ class character(gameObject):
             if self.movement[1] > 0:
                 self.pos[1] += state.movetickamount
                 self.movement[1]-=state.movetickamount
+                if self.movement[1] < 0:
+                    self.movement[1] = 0
             elif self.movement[1] < 0:
                 self.pos[1] -= state.movetickamount
                 self.movement[1]+=state.movetickamount
-            if abs(self.movement[1]) < 1:
-                self.movement[1] = 0
+                if self.movement[1] > 0:
+                    self.movement[1] = 0
         else:
+            if type(self) == Boss:
+                print(self.movement)
             self.pos[1] += self.movement[1]
             self.movement[1] = 0
 
@@ -346,11 +361,13 @@ class character(gameObject):
             if self.movement[0] > 0:
                 self.pos[0] += state.movetickamount
                 self.movement[0]-=state.movetickamount
+                if self.movement[0] > 0:
+                    self.movement[0] = 0
             elif self.movement[0] < 0:
                 self.pos[0] -= state.movetickamount
                 self.movement[0]+=state.movetickamount
-            if abs(self.movement[0]) < 1:
-                self.movement[0] = 0
+                if self.movement[0] > 0:
+                    self.movement[0] = 0
         else:
             self.pos[0] += self.movement[0]
             self.movement[0] = 0
@@ -432,13 +449,13 @@ class character(gameObject):
     def damagetake(self,dmg):
         pass
                 
-    #Draw the player sprite to the canvas in the correct position
+    #Draw the sprite to the canvas in the correct position
     def render(self):
         parallaxmod = self.parallax - state.cam.depth
         if self.direction == 1:
-            state.display.blit(self.sprite,[self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod])
+            state.display.blit(self.sprite,[(self.pos[0]-state.cam.pos[0]*parallaxmod)*state.scaleamt,(self.pos[1]-state.cam.pos[1]*parallaxmod)*state.scaleamt])
         else:
-            state.display.blit(pygame.transform.flip(self.sprite,True,False),[self.pos[0]-state.cam.pos[0],self.pos[1]-state.cam.pos[1]])
+            state.display.blit(pygame.transform.flip(self.sprite,True,False),[(self.pos[0]-state.cam.pos[0]*parallaxmod)*state.scaleamt,(self.pos[1]-state.cam.pos[1]*parallaxmod)*state.scaleamt])
 
 class spawner(gameObject):
     def __init__(self,locus,depth,parallax,name, layer, extras):
@@ -456,7 +473,7 @@ class spawner(gameObject):
 
     def render(self):
         parallaxmod = self.parallax - state.cam.depth
-        pygame.draw.rect(state.display,(255,255,0),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,20,20))
+        pygame.draw.rect(state.display,(255,255,0),((self.pos[0]-state.cam.pos[0]*parallaxmod)*state.scaleamt,(self.pos[1]-state.cam.pos[1]*parallaxmod)*state.scaleamt,20*state.scaleamt,20*state.scaleamt))
         
     def update(self):
         #super().update()
@@ -511,7 +528,7 @@ class Sign(character):
     def update(self):
         super().update()
         self.animationupdate()
-        self.sprite.blit(state.font.render(self.text,False,(255,255,180)),(40,40))
+        self.sprite.blit(state.font.render(self.text,False,(255,255,180)),(40*state.scaleamt,40*state.scaleamt))
     
         
 class Platform(character):
@@ -608,7 +625,7 @@ class Hitbox(gameObject):
         elif self.mode == "split":
             color = [50,200,50]
         parallaxmod = self.parallax - state.cam.depth
-        pygame.draw.rect(state.display,color,(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
+        pygame.draw.rect(state.display,color,((self.pos[0]-state.cam.pos[0]*parallaxmod)*state.scaleamt,(self.pos[1]-state.cam.pos[1]*parallaxmod)*state.scaleamt,self.size[0]*state.scaleamt,self.size[1]*state.scaleamt))
 
     def collidefunction(self,trigger):
         if trigger != self.parent:
@@ -628,11 +645,13 @@ class Hitbox(gameObject):
                     trigger.delete()
             elif self.mode == "triggerfunc":
                 if trigger.allegience != self.allegience:
-                    getattr(self.parent,func)()
+                    getattr(self.parent,self.amt)()
             elif self.mode == "split":
                 if type(trigger) == Enemy and trigger.iframes <= 0:
-                    print(self.amt)
+                    #print(self.amt)
                     moves.split(trigger,self.amt)
+                elif type(trigger) == Boss and trigger.iframes <= 0:
+                    trigger.damagetake(trigger.health/2)
 
 class collectGoal(character):
     def __init__(self,locus,depth,parallax,name, layer, extras):
@@ -740,7 +759,10 @@ class Projectile(character):
 class Player(character):
     def __init__(self,locus,depth,parallax,name,layer,extras):
         super().__init__(locus,depth,parallax,name,layer,extras)
-        self.abilities = ["Default","MMissile"]
+        if "Powers" in self.data.keys():
+            self.abilities = self.data["Powers"]
+        else:
+            self.abilities = ["Default"]
         self.weap = "Default"
         self.maxhealth = 100
         self.health = self.maxhealth
@@ -786,9 +808,9 @@ class Player(character):
         self.speed[1] += self.nextspeedadj[1]
         #print("After:",self.speed)
         self.nextspeedadj = [0,0]
-        state.HUD.blit(state.font.render(f"HP:{self.health}",False,[255,255,255],[0,0,0]),(30,30))
+        state.HUD.blit(state.font.render(f"HP:{self.health}",False,[255,255,255],[0,0,0]),(30*state.scaleamt,30*state.scaleamt))
         if self.health <= 0:
-            state.HUD.blit(state.font.render(f"Game Over",False,[255,0,0],[0,0,0]),(1800,1800))
+            state.HUD.blit(state.font.render(f"Game Over",False,[255,0,0],[0,0,0]),(1800*state.scaleamt,1800*state.scaleamt))
         if hasattr(animHandlers,f"{self.name}animationPick"):
             getattr(animHandlers,f"{self.name}animationPick")(self)
         self.animationupdate()
@@ -799,8 +821,8 @@ class Player(character):
         #run the jump function if the spacebar is down
         if state.keys[pygame.K_SPACE]:
             if pygame.K_SPACE in state.newkeys and self.grounded == True:
-                #moves.jump(self,100)
-                self.actionqueue.append([0,["jump",120],[None,None,True]])
+                #moves.jump(self,120)
+                self.actionqueue.append([0,["jump",80],[None,None,True]])
             else:
                 self.actionqueue.append([0,["jumpstall",100],[None,None,True]])
         #walk left or right if the a or d keys are pressed. Swap directions accordingly unless the shift key is held.
@@ -866,18 +888,15 @@ class Enemy(character):
             self.pallate = self.data["Pallate"]
         else:
             self.pallate = "Default"
-        self.maxhealth = 100
+        self.maxhealth = self.data["HP"]
         if "healthDivide" in self.extras.keys():
             self.health = int(self.maxhealth/self.extras["healthDivide"])
         else:
             self.health = self.maxhealth
-        print(self.health)
-        self.gravity = 50
+        self.gravity = 7
         self.grounded = False
         #find player to target
-        for obj in state.objects:
-            if "Player" in str(obj):
-                self.target = obj
+        self.target = None
         # pygame.draw.rect(self.sprite,(255,255,255),((self.size[0]-20),self.size[1]/4,20,20))
 
     def update(self):
@@ -889,6 +908,11 @@ class Enemy(character):
         self.lastleft = self.left.copy()
         self.lastright = self.right.copy()
         self.lastdir = self.direction
+
+        for obj in state.objects:
+            if type(obj).__name__== "Player":
+                self.target = obj
+
         #refresh the actionqueue
         if self.iframes > 0:
             self.iframes -= state.deltatime
@@ -912,15 +936,15 @@ class Enemy(character):
         
         self.physics()
         self.actionupdate()
-        #adjust speed for the next frame--complex deltatime stuffs 
-        self.speed[0] += self.nextspeedadj[0]
-        self.speed[1] += self.nextspeedadj[1]
         self.nextspeedadj = [0,0]
         #update animations
         if hasattr(animHandlers,f"{self.name}animationPick"):
             getattr(animHandlers,f"{self.name}animationPick")(self)
         self.animationupdate()
         self.render()
+        #adjust speed for the next frame--complex deltatime stuffs 
+        self.speed[0] += self.nextspeedadj[0]
+        self.speed[1] += self.nextspeedadj[1]
         
     def collidefunction(self,trigger):
         if trigger.allegience != self.allegience:
@@ -934,7 +958,7 @@ class Enemy(character):
         self.actionqueue.append([30,["destun",dmg],[None,None,True]])
         self.health -= dmg
         if self.health <= 0:
-            self.actionqueue = [[0,["dieDefault",None],[None,None,True]]]
+            self.kill()
             
 class roomLock(gameObject):
     def __init__(self,locus,depth,parallax,name, layer, extras):
@@ -951,7 +975,7 @@ class roomLock(gameObject):
     def render(self):
         if state.gamemode == "edit":
             parallaxmod = self.parallax - state.cam.depth
-            pygame.draw.rect(state.display,(200,100,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]),int(state.tilesize/2))
+            pygame.draw.rect(state.display,(200,100,50),((self.pos[0]-state.cam.pos[0]*parallaxmod)*state.scaleamt,(self.pos[1]-state.cam.pos[1]*parallaxmod)*state.scaleamt,self.size[0]*state.scaleamt,self.size[1]*state.scaleamt),int(state.tilesize*state.scaleamt/2))
         
     def update(self):
         self.render()
@@ -964,7 +988,7 @@ class roomLock(gameObject):
             if self not in state.cam.locks:
                 state.cam.locks.append(self)
             for item in state.objects:
-                if hasattr(item,"fightStart") and self.checkobjcollide(self,item):
+                if hasattr(item,"fightStart") and self.checkobjcollide(self,item) and not item.active:
                     item.fightStart()
     
 class Boss(Enemy):
@@ -972,23 +996,32 @@ class Boss(Enemy):
         super().__init__(locus,depth,parallax,name,layer,extras)
         self.trueBehavior = self.behavior.copy()
         self.behavior = state.aisource["BossWait"]
+        self.active = False
         
     def update(self):
         super().update()
+        if self.behavior == self.trueBehavior:
+            state.HUD.blit(state.font.render(f"Boss HP:{self.health}",False,[255,0,100],[0,0,0]),(30*state.scaleamt,150*state.scaleamt))
         if self.iframes > 0:
             self.iframes -= state.deltatime
 
     def fightStart(self):
+        self.actionqueue = [[0,["nothing",None],["time",120,0]]]
         self.behavior = self.trueBehavior
+        self.stun = False
+        self.animname = "Intro"
+        self.requestanim = True
+        self.active = True
         
     def damagetake(self,dmg):
         if self.health > 0:
             if self.iframes <= 0:
                 self.health -= dmg
-                self.animname = "Fall"
+                self.animname = "Hurt"
                 self.requestanim = True
-                self.iframes = 60
+                self.iframes = 90
                 self.actionqueue.append([0,["walk",10*self.direction],[None,None,True]])
+                self.actionqueue.append([0,["jump",20],[None,None,True]])
                 self.actionqueue.append([0,["stun",dmg],[None,None,True]])
                 self.actionqueue.append([30,["destun",dmg],[None,None,True]])
                 #apply stun pallate after a while. Maybe we replace this with a flicker function?
@@ -1005,4 +1038,37 @@ class Boss(Enemy):
                 self.actionqueue.append([85,["tempPallate","Stun"],[None,None,True]])
                 self.actionqueue.append([90,["deTempPallate",None],[None,None,True]])
             if self.health <= 0:
-                self.kill() 
+                self.kill()
+class oneWay(gameObject):
+    def __init__(self,locus,depth,parallax,name,layer,extras):
+        super().__init__(locus,depth,parallax,layer,extras)
+        if hasattr(self.extras,"size"):
+            self.size = self.extras["size"]
+        else:
+            self.size = [120,3600]
+        self.name = name
+        if hasattr(self.extras,"axis"):
+            self.axis = self.extras["axis"]
+        else:
+            self.axis = "left"
+        self.getpoints()
+
+    def update(self):
+        self.getpoints()
+        self.render()
+        
+    def collidefunction(self,trigger):
+        match self.axis:
+            case "left":
+                if trigger.right[0] >= self.left[0] and trigger.left[0] <= self.left[0] and trigger.speed[0] > 0:
+                    trigger.pos[0] = self.left[0] - trigger.size[0]
+                    trigger.blockedright = True
+            case "right":
+                if trigger.left[0] <= self.right[0] and trigger.right[0] >= self.right[0] and trigger.speed[0] < 0:
+                    trigger.pos[0] = self.right[0]
+                    trigger.blockedleft = True
+    def render(self):
+        pass
+        #parallaxmod = self.parallax - state.cam.depth
+        #pygame.draw.rect(state.display,(100,50,100),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
+        

@@ -3,6 +3,7 @@
         "Type":"Player",
         "Info":"MathWiz",
         "Deathtype":"Player",
+	"Powers":["Default","MMissile","DivSlice"],
         "WeapLimits":
         {
             "Bustershot": 3,
@@ -67,8 +68,10 @@
     "test-enemy":{
         "Type":"Enemy",
         "Info":"MathWiz",
-        "Behavior":"BossWait",
+        "Behavior":"PatrolPacifist",
+        "Deathtype":"Enemy",
         "Pallate":"Shadow",
+	"HP":30,
         "WeapLimits":
         {
             "Bustershot": 1
@@ -79,12 +82,17 @@
         "Info":"None",
         "Size":[3600,3600]
     },
+    "BossDoor":{
+	"Type":"oneWay",
+	"Info":"Bustershot"
+    },
     "test-boss":{
         "Type":"Boss",
         "Info":"MathWiz",
         "Behavior":"TestBoss",
         "Pallate":"Shadow",
         "Deathtype":"Boss",
+	"HP":200,
         "WeapLimits":
         {
             "Bustershot": 1
@@ -93,12 +101,37 @@
     "Exponi":{
         "Type":"Boss",
         "Info":"Exponi",
-        "Behavior":"TestBoss",
+        "Behavior":"ExpoBoss",
         "Pallate":"Default",
         "Deathtype":"Boss",
+	"Powers":["MMissile"],
+	"HP":200,
         "WeapLimits":
         {
             "Missile": 9
+        }
+    },
+    "Shooter":{
+        "Type":"Enemy",
+        "Info":"MathWiz",
+        "Behavior":"JumpShoot",
+        "Deathtype":"Enemy",
+        "Pallate":"ShadowToo",
+	"HP":30,
+        "WeapLimits":
+        {
+            "Bustershot": 1
+        }
+    },
+    "Seeker":{
+        "Type":"Enemy",
+        "Info":"MathWiz",
+        "Behavior":"Seek",
+        "Deathtype":"Enemy",
+        "Pallate":"Shadow",
+	"HP":30,
+        "WeapLimits":
+        {
         }
     }
 }

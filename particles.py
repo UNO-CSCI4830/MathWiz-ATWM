@@ -37,9 +37,12 @@ class ParticleManager:
             parallaxmod = state.level.parallaxes[layer]-state.cam.depth
             
             state.display.blit(state.spritesheet,
-                               (particle[0][0]+particle[2][0] - state.cam.pos[0]*parallaxmod,
-                                particle[0][1]+particle[2][1] - state.cam.pos[1]*parallaxmod),
-                               particle[1][particle[5]][:4])
+                               ((particle[0][0]+particle[2][0] - state.cam.pos[0]*parallaxmod)*state.scaleamt,
+                                (particle[0][1]+particle[2][1] - state.cam.pos[1]*parallaxmod)*state.scaleamt),
+                               [particle[1][particle[5]][0]*state.scaleamt,
+                                particle[1][particle[5]][1]*state.scaleamt,
+                                particle[1][particle[5]][2]*state.scaleamt,
+                                particle[1][particle[5]][3]*state.scaleamt])
             #update the movement speed. Don't let them break TV, tho
             if particle[2][0] >= 0:
                 if particle[2][0] <= particle[4][0]:
@@ -71,7 +74,8 @@ class ParticleManager:
             particle[7]-=state.deltatime
             #update frame if the current one's run it's course
             if particle[6] >= particle[1][particle[5]][7]:
-                particle[6] = particle[1][particle[5]][7]
+                particle[6] = 0#particle[1][particle[5]][7]
+                particle[5] += 1
             if particle[5] >= len(particle[1]):
                 particle[5] = 0
             #delete the object if it's lifespan is up

@@ -60,12 +60,12 @@ class drawlayer:
 
         self.animlistrecalc()
             
-        self.brush = pygame.Surface((state.tilesize,state.tilesize)).convert()
+        self.brush = pygame.Surface((state.tilesize*state.scaleamt,state.tilesize*state.scaleamt)).convert_alpha()
         self.brush.fill(state.invis)
         if state.gamemode == "edit":
             self.brush.set_colorkey(state.invis)
         
-        self.colorbrush = pygame.Surface((state.tilesize,state.tilesize)).convert()
+        self.colorbrush = pygame.Surface((state.tilesize*state.scaleamt,state.tilesize*state.scaleamt)).convert_alpha()
         self.colorbrush.fill(state.invis)
         self.colorbrush.set_colorkey(state.invis)
         
@@ -109,7 +109,7 @@ class drawlayer:
         self.width = self.longest*state.tilesize
         self.height = self.tallest*state.tilesize
         #canvas on which the level is to be drawn
-        self.workcanvas = pygame.Surface((self.width,self.height)).convert()
+        self.workcanvas = pygame.Surface((self.width*state.scaleamt,self.height*state.scaleamt)).convert_alpha()
         if state.gamemode == "play":
             self.workcanvas.set_colorkey(state.invis)
             
@@ -117,7 +117,7 @@ class drawlayer:
         if tilenum != self.brushval or pallatenum != self.brushpal:
             self.brush.fill(state.invis)
             #print(row,tile,tileinfo,tilenum,pallatenum)
-            self.brush.blit(state.tilesheet, (tileinfo[3][0],tileinfo[3][1]), (tileinfo[1][0],tileinfo[1][1],tileinfo[2][0],tileinfo[2][1]))
+            self.brush.blit(state.tilesheet, (tileinfo[3][0]*state.scaleamt,tileinfo[3][1]*state.scaleamt), (tileinfo[1][0]*state.scaleamt,tileinfo[1][1]*state.scaleamt,tileinfo[2][0]*state.scaleamt,tileinfo[2][1]*state.scaleamt))
             
             """#this is a temporary rendering system. It should ultimately be replaced with graphics pulled from files based on tilenum.
             #also, only changes the brush when the tilenum is different. This hopefully saves on execution time.
@@ -168,7 +168,7 @@ class drawlayer:
             self.flipx = False
             self.flipy = False
         #render layer
-        self.workcanvas.blit(pygame.transform.flip(pygame.transform.rotate(self.brush,self.rotate),self.flipx,self.flipy),(tile*state.tilesize,row*state.tilesize))
+        self.workcanvas.blit(pygame.transform.flip(pygame.transform.rotate(self.brush,self.rotate),self.flipx,self.flipy),(tile*state.tilesize*state.scaleamt,row*state.tilesize*state.scaleamt))
 
     def animlistrecalc(self):
         self.animationlist = self.level.animationlist[self.layernum]
@@ -202,7 +202,7 @@ class drawlayer:
                 col = int(255*self.animtimers[sequencenum]/self.animationlist[sequencenum][3][self.animframes[sequencenum]][1])
                 row = self.animationlist[sequencenum][2]
                 tile = self.animationlist[sequencenum][1]
-                pygame.draw.rect(self.workcanvas, (0,col,col,50), (tile*state.tilesize,row*state.tilesize,state.tilesize,state.tilesize))
+                pygame.draw.rect(self.workcanvas, (0,col,col,50), (tile*state.tilesize*state.scaleamt,row*state.tilesize*state.scaleamt,state.tilesize*state.scaleamt,state.tilesize*state.scaleamt))
         #this modifier determines how much the offset of an object should be affected by it's distance from the camera in z space...sort of.
         parallaxmod = self.parallax-state.cam.depth
         
@@ -214,16 +214,15 @@ class drawlayer:
             
         drawspot = (screenplacemod[0]-state.cam.pos[0]*parallaxmod,
                     screenplacemod[1]-state.cam.pos[1]*parallaxmod)
-        state.display.blit(self.workcanvas,drawspot)
-        if self.loop[0] == True or self.loop[1] == True:
-            match (abs(state.cam.pos[0])+state.screensize[0] > (drawspot[0]+self.longest*state.tilesize), 
-                  abs(state.cam.pos[1])+state.screensize[1] > len(self.level.tilemap[self.layernum])*state.tilesize):
-                case (True, False):
-                    state.display.blit(self.workcanvas,(drawspot[0]+self.longest*state.tilesize,drawspot[1]))
-                case (True, True):
-                    state.display.blit(self.workcanvas,(drawspot[0]+self.longest*state.tilesize,drawspot[1]))
-                    state.display.blit(self.workcanvas,(drawspot[0]+self.longest*state.tilesize,drawspot[1]+len(self.level.tilemap[self.layernum])*state.tilesize))
-                    state.display.blit(self.workcanvas,(drawspot[0],drawspot[1]+len(self.level.tilemap[self.layernum])*state.tilesize))
-                case (False, True):
-                    state.display.blit(self.workcanvas,(drawspot[0],drawspot[1]+len(self.level.tilemap[self.layernum])*state.tilesize))
-        
+        state.display.blit(self.workcanvas,(drawspot[0]*state.scaleamt,drawspot[1]*state.scaleamt))
+
+        if self.loop[0] == True:
+            if abs(state.cam.pos[0])+state.screensize[0] > (drawspot[0]+self.longest*state.tilesize):
+                state.display.blit(self.workcanvas,((drawspot[0]+self.width)*state.scaleamt,drawspot[1]*state.scaleamt))
+                
+        if self.loop[1] == True:
+            if abs(state.cam.pos[1])+state.screensize[1] > len(self.level.tilemap[self.layernum])*state.tilesize:
+                state.display.blit(self.workcanvas,((drawspot[0])*state.scaleamt,(drawspot[1]+self.height)*state.scaleamt))
+
+        if self.loop[0] and self.loop[1] and abs(state.cam.pos[0]) > (drawspot[0]+self.longest*state.tilesize) and abs(state.cam.pos[1])+state.screensize[1] > len(self.level.tilemap[self.layernum])*state.tilesize:
+            state.display.blit(self.workcanvas,((drawspot[0]+self.width)*state.scaleamt,(drawspot[1]+self.height)*state.scaleamt))

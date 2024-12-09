@@ -26,7 +26,7 @@ state.wasclick = [0,0,0,0,0]
 #create stuff for level rendering
 state.tilesize = 120
 state.screensize = (state.tilesize*30,state.tilesize*30)
-state.window = pygame.display.set_mode((800,800))
+state.window = pygame.display.set_mode((600,600))
 state.tilesource = json.load(open("tiles.json"))
 state.tilesheet = pygame.image.load("Assets/images/tiles.png").convert()
 state.spritesheet = pygame.image.load("Assets/images/CharSprites.png").convert()
@@ -63,7 +63,7 @@ def main():
     while True:
         #position of the mouse cursor relative to the window. Adjusted for the scaling.
         state.mouse = pygame.mouse.get_pos()
-        state.mouse = (state.mouse[0]*state.screensize[0]/800,state.mouse[1]*state.screensize[1]/800)
+        state.mouse = (state.mouse[0]*state.screensize[0]/600,state.mouse[1]*state.screensize[1]/600)
         #current state of the mouse buttons
         state.click = pygame.mouse.get_pressed()
         #current state of keyboard keys
@@ -106,7 +106,7 @@ def main():
                 pass
 
         #display and prep for next update
-        state.window.blit(pygame.transform.scale(state.display,(800,800)),(0,0))
+        state.window.blit(pygame.transform.scale(state.display,(600,600)),(0,0))
         
         pygame.display.flip()
         state.cam.update()
@@ -746,8 +746,8 @@ def addLayer():
             if item.layernum >= state.renderlayer:
                 item.layernum += 1
         else:
-            if item.layer >= state.rednerlayer:
-                item.layernum += 1
+            if item.layer >= state.renderlayer:
+                item.layer += 1
     level.drawlayer(state.level,state.renderlayer)
     state.level.tilemap.insert(num,blank())
     state.level.pallatemap.insert(num,blank())
