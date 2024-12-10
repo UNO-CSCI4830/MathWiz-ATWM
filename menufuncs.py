@@ -8,7 +8,6 @@ Purpose: functions for menus in "MathWiz!"
 import json
 import pygame
 import GameData as state
-import pygame
 
 #load a menu as prescribed by the json file
 def loadmenu(menuname):
@@ -23,7 +22,6 @@ def loadmenu(menuname):
     state.objects = []
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
     state.cam.focusobj = None
-    state.deltatime = 1
     state.menu_button_focus = None
     state.cam.locks = []
     #import statement down here to prevent import loop. Perhaps a better way to do this exists?
@@ -100,31 +98,33 @@ def search(search_pos):
     search_pos: [int, int]
         The initial position of the screen to start searching from.
     """
+    # TODO: revamp the function to calculate search distance to buttons rather than cardinal linear searches
+    # TODO: potentially move this to menu.py
     menu_buttons = []
     for obj in state.objects:
         if type(obj).__name__ == "MenuObj" and obj.text != "":
             menu_buttons.append(obj)
 
     pixel_step_count = 5
-    if state.keys[pygame.K_UP]:
+    if state.keys[pygame.K_UP] or state.keys[pygame.K_w]:
         while 0 < search_pos[1]:
             search_pos[1] -= pixel_step_count
             for button in menu_buttons:
                 if button.pos[0] < search_pos[0] < button.pos[0] + button.size[0] and button.pos[1] < search_pos[1] < button.pos[1] + button.size[1]:
                     return button
-    elif state.keys[pygame.K_LEFT]:
+    elif state.keys[pygame.K_LEFT] or state.keys[pygame.K_a]:
         while 0 < search_pos[0]:
             search_pos[0] -= pixel_step_count
             for button in menu_buttons:
                 if button.pos[0] < search_pos[0] < button.pos[0] + button.size[0] and button.pos[1] < search_pos[1] < button.pos[1] + button.size[1]:
                     return button
-    elif state.keys[pygame.K_RIGHT]:
+    elif state.keys[pygame.K_RIGHT] or state.keys[pygame.K_d]:
         while search_pos[0] < state.screensize[0]:
             search_pos[0] += pixel_step_count
             for button in menu_buttons:
                 if button.pos[0] < search_pos[0] < button.pos[0] + button.size[0] and button.pos[1] < search_pos[1] < button.pos[1] + button.size[1]:
                     return button
-    elif state.keys[pygame.K_DOWN]:
+    elif state.keys[pygame.K_DOWN] or state.keys[pygame.K_s]:
         while search_pos[1] < state.screensize[1]:
             search_pos[1] += pixel_step_count
             for button in menu_buttons:

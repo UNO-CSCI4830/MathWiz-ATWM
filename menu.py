@@ -88,13 +88,13 @@ class MenuObj:
             # if there was a button previously being hovered, search from that button
             if state.menu_button_focus != None:
                 found_button = None
-                if state.keys[pygame.K_UP]:
+                if state.keys[pygame.K_UP] or state.keys[pygame.K_w]:
                     found_button = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0]/2, state.menu_button_focus.pos[1]]) # upmost center point
-                elif state.keys[pygame.K_LEFT]:
+                elif state.keys[pygame.K_LEFT] or state.keys[pygame.K_a]:
                     found_button = menufuncs.search([state.menu_button_focus.pos[0], state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]/2]) # leftmost center point
-                elif state.keys[pygame.K_RIGHT]:
+                elif state.keys[pygame.K_RIGHT] or state.keys[pygame.K_d]:
                     found_button = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0], state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]/2]) # rightmost center point
-                elif state.keys[pygame.K_DOWN]:
+                elif state.keys[pygame.K_DOWN] or state.keys[pygame.K_s]:
                     found_button = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0]/2, state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]]) # bottommost center point
             else: # if not (aka: mouse was not on anything), attempt to search from the center of the screen
                 found_button = menufuncs.search([state.screensize[0]/2, state.screensize[1]/2])
