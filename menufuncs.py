@@ -19,6 +19,7 @@ def loadmenu(menuname):
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
     state.cam.focusobj = None
     state.deltatime = 1
+    state.menu_button_focus = None
     #import statement down here to prevent import loop. Perhaps a better way to do this exists?
     import menu
     for entity in menudata[menuname]:
@@ -35,6 +36,7 @@ def loadlevel(levelname):
     state.objects = []
     state.deltatime = 1
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
+    state.menu_button_focus = None
     #import statement down here to prevent import loop. Perhaps a better way to do this exists?
     import level
     state.currentlevel = level.level(levelname)

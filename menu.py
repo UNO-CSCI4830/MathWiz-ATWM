@@ -35,7 +35,7 @@ class MenuObj:
         if (state.mouse[0] >= self.pos[0]-state.cam.pos[0] and state.mouse[0] <= self.pos[0]-state.cam.pos[0]+self.size[0]) and (state.mouse[1] <= self.pos[1]-state.cam.pos[1]+self.size[1] and state.mouse[1] >= self.pos[1]-state.cam.pos[1]):
         # check when the mouse button is being held down, but only run self.onClick() when the mouse button is released
         # a click is a click; you can't run a function when it's only half.
-            if (state.click[0] and pygame.MOUSEBUTTONUP in state.event_types) or (pygame.KEYUP in state.event_types and state.keys[pygame.K_RETURN]):
+            if (state.click[0] and pygame.MOUSEBUTTONUP in state.event_types) or (pygame.K_RETURN in state.newkeys):
                 self.onClick()
             elif pygame.MOUSEMOTION in state.event_types and self.text != "":
                 state.menu_button_focus = self
@@ -61,11 +61,11 @@ class MenuObj:
                     found_button = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0], state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]/2]) # rightmost center point
                 elif state.keys[pygame.K_DOWN]:
                     found_button = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0]/2, state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]]) # bottommost center point
-                if found_button:
+            else: # if not (aka: mouse was not on anything), attempt to search from the center of the screen
+                found_button = menufuncs.search([state.screensize[0]/2, state.screensize[1]/2])
+            if found_button:
                     state.menu_button_focus = found_button
-                    print(state.menu_button_focus.text)
-            else: # if there was not a button there, attempt to search from the center of the screen
-                state.menu_button_focus = menufuncs.search([state.screensize[0], state.screensize[1]])
+                    pygame.mouse.set_pos([(found_button.pos[0] + found_button.size[0]/2)/(state.screensize[0]/800), (found_button.pos[1] + found_button.size[1]/2)/(state.screensize[1]/800)])
 
         #draw to the canvas
         state.display.blit(text,((self.pos[0]-state.cam.pos[0]+(self.size[0]/2)-(text.get_width()/2)),(self.pos[1]-state.cam.pos[1]+(self.size[1]/2)-(text.get_height()/2))))
