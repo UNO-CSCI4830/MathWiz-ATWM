@@ -70,9 +70,11 @@ state.particleManager = particles.ParticleManager()
 state.HUD.set_colorkey(state.invis)
 state.deltatime = 1
 state.fpsTarget = 60
+state.event_types = []
 state.timeslow = 1
 
 state.objects = []
+state.menu_button_focus = None
 state.cam = Cam.cam()
 
 #to start with, load menu stuffs
@@ -96,6 +98,9 @@ while True:
     #current state of the mouse buttons
     state.click = pygame.mouse.get_pressed()
     state.events = pygame.event.get()
+    #some parts of the code only care about event type, so let's fetch it here
+    for e in state.events:
+        state.event_types.append(e.type)
     for event in state.events:
         #quit logic
         if event.type == pygame.QUIT:
@@ -138,6 +143,10 @@ while True:
     #draw HUD
     state.display.blit(state.HUD,(0,0))
     #display
+    # state.window.blit(pygame.transform.scale(state.display,(state.displaysize,state.displaysize)),(0,0))
+    state.event_types = []
+    if state.menu_button_focus:
+        state.menu_button_focus.onHover()
     state.window.blit(state.display,(0,0))
     pygame.display.flip()
     state.clock.tick()

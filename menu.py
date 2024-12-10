@@ -62,16 +62,17 @@ class MenuObj:
         """
         Updates the menu object, handling hover and click events.
         """
+        # somewhere I removed the code that removes the main background menu art. this is another revolutionary bandaid fix
+        if self.text == "":
+            self.onHover()
         #if mouse is within button borders, render differently
         if (state.mouse[0] >= self.pos[0]-state.cam.pos[0] and state.mouse[0] <= self.pos[0]-state.cam.pos[0]+self.size[0]) and (state.mouse[1] <= self.pos[1]-state.cam.pos[1]+self.size[1] and state.mouse[1] >= self.pos[1]-state.cam.pos[1]):
         # check when the mouse button is being held down, but only run self.onClick() when the mouse button is released
         # a click is a click; you can't run a function when it's only half.
-            if state.click[0]:
-                    for event in state.events:
-                        if event.type == pygame.MOUSEBUTTONUP:
-                            self.onClick()
-            else:
-                self.onHover()
+            if (state.click[0] and pygame.MOUSEBUTTONUP in state.event_types) or (pygame.K_RETURN in state.newkeys):
+                self.onClick()
+            elif pygame.MOUSEMOTION in state.event_types and self.text != "":
+                state.menu_button_focus = self
         else:
             if self.graphicsdata != None:
                 #self.graphics = pygame.Surface([self.graphicsdata[2]*state.scaleamt,self.graphicsdata[3]*state.scaleamt])
@@ -81,8 +82,27 @@ class MenuObj:
                 self.canvas.fill((0,255,0))
         state.display.blit(self.canvas,((self.pos[0]-state.cam.pos[0])*state.scaleamt,(self.pos[1]-state.cam.pos[1])*state.scaleamt))
         text = state.font.render(self.text,False,(0,0,90))
-        #draw to the canvas
 
+        # allow traversal through the menus with arrow keys
+        if pygame.MOUSEMOTION not in state.event_types:
+            # if there was a button previously being hovered, search from that button
+            if state.menu_button_focus != None:
+                found_button = None
+                if state.keys[pygame.K_UP] or state.keys[pygame.K_w]:
+                    found_button = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0]/2, state.menu_button_focus.pos[1]]) # upmost center point
+                elif state.keys[pygame.K_LEFT] or state.keys[pygame.K_a]:
+                    found_button = menufuncs.search([state.menu_button_focus.pos[0], state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]/2]) # leftmost center point
+                elif state.keys[pygame.K_RIGHT] or state.keys[pygame.K_d]:
+                    found_button = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0], state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]/2]) # rightmost center point
+                elif state.keys[pygame.K_DOWN] or state.keys[pygame.K_s]:
+                    found_button = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0]/2, state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]]) # bottommost center point
+            else: # if not (aka: mouse was not on anything), attempt to search from the center of the screen
+                found_button = menufuncs.search([state.screensize[0]/2, state.screensize[1]/2])
+            if found_button:
+                    state.menu_button_focus = found_button
+                    pygame.mouse.set_pos([(found_button.pos[0] + found_button.size[0]/2)/(state.screensize[0]/800), (found_button.pos[1] + found_button.size[1]/2)/(state.screensize[1]/800)])
+
+        #draw to the canvas
         state.display.blit(text,(((self.pos[0]-state.cam.pos[0])*state.scaleamt+(self.size[0]*state.scaleamt/2)-(text.get_width()*state.scaleamt/2)),((self.pos[1]-state.cam.pos[1])*state.scaleamt+(self.size[1]*state.scaleamt/2)-(text.get_height()*state.scaleamt/2))))
     def onClick(self):
         """
