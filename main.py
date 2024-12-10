@@ -35,11 +35,13 @@ state.tilesize = 120
 state.screensize = (state.tilesize*30,state.tilesize*30)
 
 state.scaleamt = state.displaysize[0]/state.screensize[0]
+print(state.scaleamt)
 
 state.window = pygame.display.set_mode(state.displaysize)
 state.display = pygame.Surface([state.screensize[0]*state.scaleamt,state.screensize[1]*state.scaleamt])
 state.HUD = pygame.Surface([state.screensize[0]*state.scaleamt,state.screensize[1]*state.scaleamt])
 state.font = pygame.font.SysFont("Lucida Console",int(75*state.scaleamt))
+pygame.display.set_caption("MATHWIZ! The Test Run")
 
 #initialize timer
 state.clock = pygame.time.Clock()

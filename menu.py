@@ -74,7 +74,7 @@ class MenuObj:
                 self.onHover()
         else:
             if self.graphicsdata != None:
-                self.graphics = pygame.Surface([self.graphicsdata[2]*state.scaleamt,self.graphicsdata[3]*state.scaleamt])
+                #self.graphics = pygame.Surface([self.graphicsdata[2]*state.scaleamt,self.graphicsdata[3]*state.scaleamt])
                 self.graphics.blit(state.menusheet,(0,0),[self.graphicsdata[0]*state.scaleamt,self.graphicsdata[1]*state.scaleamt,self.graphicsdata[2]*state.scaleamt,self.graphicsdata[3]*state.scaleamt])
                 self.canvas.blit(pygame.transform.scale(self.graphics,[self.size[0]*state.scaleamt,self.size[1]*state.scaleamt]),(0,0))
             else:
@@ -101,7 +101,7 @@ class MenuObj:
         Handles the hover event for the menu object.
         """
         if self.graphicsdata != None:
-            self.graphics = pygame.Surface([self.graphicsdata[6]*state.scaleamt,self.graphicsdata[7]*state.scaleamt])
+            #self.graphics = pygame.Surface([self.graphicsdata[6]*state.scaleamt,self.graphicsdata[7]*state.scaleamt])
             self.graphics.blit(state.menusheet,(0,0),[self.graphicsdata[4]*state.scaleamt,self.graphicsdata[5]*state.scaleamt,self.graphicsdata[6]*state.scaleamt,self.graphicsdata[7]*state.scaleamt])
             self.canvas.blit(pygame.transform.scale(self.graphics,[self.size[0]*state.scaleamt,self.size[1]*state.scaleamt]),(0,0))
         else:

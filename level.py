@@ -1,12 +1,13 @@
 """
 Filename: level.py
 Author(s): Taliesin Reese
-Verion: 1.14
-Date: 11/23/2024
+Verion: 1.15
+Date: 12/9/2024
 Purpose: Level class and functions for "MathWiz!"
 """
 import pygame
 import json
+import math
 import menufuncs
 #import objects
 import GameData as state
@@ -36,6 +37,8 @@ class level:
         The rotation map of the level.
     pallatemap : list
         The palette map of the level.
+    bgm : string
+        Name of accompanying music track
     objs : list
         The objects in the level.
     animationlist : list
@@ -83,6 +86,8 @@ class level:
             if state.gamemode == "edit":
                 state.editobjs.append(item)
         #state.player = objects.Player([50,50],(0), "MathWiz")
+        if "bgm" in self.datafile.keys():
+            self.bgm = self.datafile["bgm"]
         state.level = self
         
 #This class is used for the rendering of levels. Each one represents a depth layer of a level that will be rendered in the appropriate order
@@ -148,12 +153,12 @@ class drawlayer:
 
         self.animlistrecalc()
             
-        self.brush = pygame.Surface((state.tilesize*state.scaleamt,state.tilesize*state.scaleamt)).convert_alpha()
+        self.brush = pygame.Surface((math.ceil(state.tilesize*state.scaleamt),math.ceil(state.tilesize*state.scaleamt))).convert_alpha()
         self.brush.fill(state.invis)
         if state.gamemode == "edit":
             self.brush.set_colorkey(state.invis)
         
-        self.colorbrush = pygame.Surface((state.tilesize*state.scaleamt,state.tilesize*state.scaleamt)).convert_alpha()
+        self.colorbrush = pygame.Surface((math.ceil(state.tilesize*state.scaleamt),math.ceil(state.tilesize*state.scaleamt))).convert_alpha()
         self.colorbrush.fill(state.invis)
         self.colorbrush.set_colorkey(state.invis)
         
@@ -226,7 +231,7 @@ class drawlayer:
         if tilenum != self.brushval or pallatenum != self.brushpal:
             self.brush.fill(state.invis)
             #print(row,tile,tileinfo,tilenum,pallatenum)
-            self.brush.blit(state.tilesheet, (tileinfo[3][0]*state.scaleamt,tileinfo[3][1]*state.scaleamt), (tileinfo[1][0]*state.scaleamt,tileinfo[1][1]*state.scaleamt,tileinfo[2][0]*state.scaleamt,tileinfo[2][1]*state.scaleamt))
+            self.brush.blit(state.tilesheet, (tileinfo[3][0]*state.scaleamt,tileinfo[3][1]*state.scaleamt), (tileinfo[1][0]*state.scaleamt,tileinfo[1][1]*state.scaleamt,math.ceil(tileinfo[2][0]*state.scaleamt),math.ceil(tileinfo[2][1]*state.scaleamt)))
             
             """#this is a temporary rendering system. It should ultimately be replaced with graphics pulled from files based on tilenum.
             #also, only changes the brush when the tilenum is different. This hopefully saves on execution time.
@@ -277,7 +282,7 @@ class drawlayer:
             self.flipx = False
             self.flipy = False
         #render layer
-        self.workcanvas.blit(pygame.transform.flip(pygame.transform.rotate(self.brush,self.rotate),self.flipx,self.flipy),(tile*state.tilesize*state.scaleamt,row*state.tilesize*state.scaleamt))
+        self.workcanvas.blit(pygame.transform.flip(pygame.transform.rotate(self.brush,self.rotate),self.flipx,self.flipy),(math.floor(tile*state.tilesize*state.scaleamt),math.floor(row*state.tilesize*state.scaleamt)))
 
     def animlistrecalc(self):
         """

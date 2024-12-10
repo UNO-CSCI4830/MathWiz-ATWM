@@ -1,6 +1,6 @@
 {
     "test":[
-        [[0,0],[3600,3600],[0,0,1200,1200,0,0,1200,1200],0,"","nothing",["nothing"]],
+        [[0,0],[3600,3600],[0,0,3600,3600,0,0,3600,3600],0,"","nothing",["nothing"]],
         [[800,2500],[2000,500], null, 1, "Start the Adventure!", "loadmenu", ["levelSelect"]],
         [[800,3000],[2000,500], null, 1, "Load Menu 2", "loadmenu", ["test2"]]
     ],
@@ -8,8 +8,9 @@
         [[800,2500],[2000,500], null, 0, "Why tho?", "loadmenu", ["test"]]
     ],
     "levelSelect":[
-        [[0,0],[3600,3600],[1200,0,1200,1200,1200,0,1200,1200],0,"","nothing",["nothing"]],
+        [[0,0],[3600,3600],[3600,0,3600,3600,3600,0,3600,3600],0,"","nothing",["nothing"]],
         [[1080,2880],[480,480], null, 1, "The Blasted Cliffs", "loadlevel", ["expofinal"]],
         [[124,490],[480,480], null, 1, "Shortcut to Bossfight", "loadlevel", ["bosstest"]]
-    ]
+    ],
+    "bgm":{"levelSelect":"Level select"}
 }

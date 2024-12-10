@@ -7,6 +7,7 @@ Purpose: functions for menus in "MathWiz!"
 """
 import json
 import GameData as state
+import pygame
 
 #load a menu as prescribed by the json file
 def loadmenu(menuname):
@@ -26,6 +27,11 @@ def loadmenu(menuname):
     import menu
     for entity in state.menudata[menuname]:
         menu.MenuObj(entity[0],entity[1],entity[2],entity[3],entity[4],entity[5], entity[6])
+    if menuname in state.menudata["bgm"].keys():
+        pygame.mixer.music.load(f"Assets\\sounds\\music\\{state.menudata['bgm'][menuname]}.wav")
+        pygame.mixer.music.play(-1)
+    else:
+        pygame.mixer.music.stop()
     state.clock.tick()
         
 #load a level as prescribed by the json file
@@ -57,6 +63,11 @@ def loadlevel(levelname):
             item.actionqueue.append([0,[f"levelStart",None],["time",90,None]])
             item.stun = True
             item.actionqueue.append([90,["destun",None],[None,None,None]])
+    if hasattr(state.currentlevel,"bgm"):
+        pygame.mixer.music.load(f"Assets\\sounds\\music\\{state.currentlevel.bgm}.wav")
+        pygame.mixer.music.play(-1)
+    else:
+        pygame.mixer.music.stop()
     state.clock.tick()
 
 #load the cutscene player

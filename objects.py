@@ -271,8 +271,6 @@ class character(gameObject):
                 action[0] -= state.deltatime
             #otherwise, do the thing.
             else:
-                if type(self) ==Boss and action[1][0] == "jump":
-                    print(action[1][0],self.speed,self.grounded)
                 getattr(moves,action[1][0])(self, action[1][1])
                 #if the action's popcondidtion is met, pull it from the queue and skip.
                 match action[2][0]:
@@ -517,8 +515,6 @@ class character(gameObject):
                 if self.movement[1] > 0:
                     self.movement[1] = 0
         else:
-            if type(self) == Boss:
-                print(self.movement)
             self.pos[1] += self.movement[1]
             self.movement[1] = 0
 
@@ -859,15 +855,17 @@ class CollapsingPlatform(Platform):
         trigger : object
             The object that triggered the collision.
         """
-        if trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0:
+        if not self.collapsing and trigger.lastbottom[1] <= self.top[1] and trigger.speed[1] >= 0:
             #self.sprite.fill((0,0,100))
             #pygame.draw.rect(self.sprite,(0,0,255),(0,0,self.size[0],20))
             trigger.grounded = True
             trigger.speed[1] = 0
             trigger.movement[1] = 0
             trigger.pos[1] = self.top[1] - trigger.size[1]
-            self.actionqueue.append([6,["collapsestart",None],["self","collapsing",True]])
-            self.actionqueue.append([60,["diePlat","WoodPlank"],[None,None,True]])
+            if self.collapsing == False and type(trigger) == Player:
+                self.animname = "Break"
+                self.actionqueue.append([6,["collapsestart",None],["self","collapsing",True]])
+                self.actionqueue.append([60,["diePlat","WoodPlank"],[None,None,True]])
             
 class Hitbox(gameObject):
     """
@@ -1081,13 +1079,6 @@ class Projectile(character):
                 self.gun.bulletCounts[self.weapon_type] -= 1
                 self.delete()
 
-    def render(self):
-        """
-        Renders the projectile on the screen.
-        """
-        parallaxmod = self.parallax - state.cam.depth
-        pygame.draw.rect(state.display,(200,50,50),(self.pos[0]-state.cam.pos[0]*parallaxmod,self.pos[1]-state.cam.pos[1]*parallaxmod,self.size[0],self.size[1]))
-                
     def collidefunction(self,trigger):
         """
         Handles collision events for the projectile.
@@ -1096,7 +1087,7 @@ class Projectile(character):
         trigger : object
             The object that triggered the collision.
         """
-        if self.allegience != trigger.allegience:
+        if type(trigger) != Sign and self.allegience != trigger.allegience:
             #print(type(trigger))#.allegience)
             if hasattr(trigger,"damagetake"):
                 trigger.damagetake(self.damage)
@@ -1419,7 +1410,7 @@ class Boss(Enemy):
             self.iframes -= state.deltatime
 
     def fightStart(self):
-        self.actionqueue = [[0,["nothing",None],["time",120,0]]]
+        self.actionqueue = [[0,["nothing",None],["time",120,0]],[0,["setbgm","Boss Theme"],[None,None,None]]]
         self.behavior = self.trueBehavior
         self.stun = False
         self.animname = "Intro"

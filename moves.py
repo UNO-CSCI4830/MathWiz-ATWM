@@ -11,17 +11,17 @@ import menufuncs
 pygame.init()
 pygame.mixer.init()
 
-jump_sound = pygame.mixer.Sound("Assets/sounds/SFX/Jump.mp3")
+jump_sound = pygame.mixer.Sound("Assets/sounds/sfx/Jump.mp3")
 jump_sound.set_volume(.5)
-basic_shot_sound = pygame.mixer.Sound("Assets/sounds/SFX/Magic Shot.mp3")
+basic_shot_sound = pygame.mixer.Sound("Assets/sounds/sfx/Magic Shot.mp3")
 basic_shot_sound.set_volume(.5)
-flaming_shot_sound = pygame.mixer.Sound("Assets/sounds/SFX/FireShot.mp3")
+flaming_shot_sound = pygame.mixer.Sound("Assets/sounds/sfx/FireShot.mp3")
 flaming_shot_sound.set_volume(.5)
-explosion_sound = pygame.mixer.Sound("Assets/sounds/SFX/Explosion.mp3")
+explosion_sound = pygame.mixer.Sound("Assets/sounds/sfx/Explosion.mp3")
 explosion_sound.set_volume(.5)
-hit_sound = pygame.mixer.Sound("Assets/sounds/SFX/Magic Hit.mp3")
+hit_sound = pygame.mixer.Sound("Assets/sounds/sfx/Magic Hit.mp3")
 hit_sound.set_volume(.3)
-enemy_defeat_sound = pygame.mixer.Sound("Assets/sounds/SFX/EnemyDeath.mp3")
+enemy_defeat_sound = pygame.mixer.Sound("Assets/sounds/sfx/EnemyDeath.mp3")
 enemy_defeat_sound.set_volume(.7)
 from copy import deepcopy
 #set vertical velocity to the jumpspeed
@@ -206,6 +206,32 @@ def delete(caller,burner):
     """
     caller.delete()
 
+def setbgm(caller,name):
+    """
+    Sets the music.
+
+    Parameters:
+    caller : object
+        The object calling the function.
+    name : string
+        Name of the track to play.
+    """
+    pygame.mixer.music.load(f"Assets\\sounds\\music\\{name}.wav")
+    pygame.mixer.music.play(-1)
+
+def playSound(caller,name):
+    """
+    Plays a sound.
+
+    Parameters:
+    caller : object
+        The object calling the function.
+    name : string
+        Name of the track to play.
+    """
+    sound = pygame.mixer.Sound(f"Assets\\sounds\\sfx\\{name}.wav")
+    sound.play()
+
 def loadnextstate(caller,data):
     """
     Loads the next state.
@@ -280,7 +306,7 @@ def stun(caller,data):
 
 def split(caller,num):
     """
-    Divides objects into multiple objects. Enemies will have reduced health, and Projectiles will have altered trajectories
+    Divides objects into multiple objects. Enemies will have reduced health, and Projectiles will have altered trajectories.
 
     Parameters:
     caller : object
@@ -332,27 +358,81 @@ def destun(caller,data):
     caller.stun = False
     
 def tempPallate(caller,name):
+    """
+    Temporarily apply a pallate.
+
+    Parameters:
+    caller : object
+        The object calling the function.
+    name : string
+        The name of the pallate.
+    """
     if caller.storepal == None:
         caller.storepal = caller.pallate
         caller.pallate = name
 
 def deTempPallate(caller,Burner):
+    """
+    Restores a pallate altered by tempPallate.
+
+    Parameters:
+    caller : object
+        The object calling the function.
+    data : any
+        Placeholder parameter.
+    """
     if caller.storepal != None:
         caller.pallate = caller.storepal
         caller.storepal = None
     
 def camlock(caller,Burner):
+    """
+    Adds the caller to the list of camera locks.
+
+    Parameters:
+    caller : object
+        The object calling the function.
+    data : any
+        Placeholder parameter.
+    """
     if caller not in state.cam.locks:
         state.cam.locks.append(caller)
 
 def camunlock(caller,Burner):
+    """
+    Expunge the caller from the list of camera locks.
+
+    Parameters:
+    caller : object
+        The object calling the function.
+    data : any
+        Placeholder parameter.
+    """
     if caller in state.cam.locks:
         state.cam.locks.remove(caller)
         
 def cammove(caller,pos):
+    """
+    Force the camera to move.
+
+    Parameters:
+    caller : object
+        The object calling the function.
+    data : any
+        Placeholder parameter.
+    """
     state.cam.pos = pos
     
 def nothing(caller, nothing):
+    """
+    nothing
+
+    Parameters:
+    caller : object
+        The object calling the function.
+    nothing : nothing
+        nothing
+    """
     pass
 
 def levelStart(caller,Burner):
@@ -483,14 +563,30 @@ def diePlayer(caller,Burner):
     Burner : any
         Placeholder parameter.
     """
-    caller.actionqueue = [[120,["loadnextstate",["level",state.level.name]],[None,None,True]],[30,["stun",None],[None,None,True]]]
+    pygame.mixer.music.stop()
+    caller.actionqueue = [[120,["loadnextstate",["level",state.level.name]],[None,None,True]],
+                          [30,["stun",None],[None,None,True]],
+                          [0,["playSound","gameover"],[None,None,None]]]
     caller.stun = True
     caller.animname = "Fall"
     caller.requestanim = True
     camunlock(caller,Burner)
 
 def dieBoss(caller,Burner):
-    caller.actionqueue = [[0,["jump",50],[None,None,True]],[0,["timeslowset",4],[None,None,True]],[60,["timeslowset",1],[None,None,True]]]
+    """
+    Boss death function.
+
+    Parameters:
+    caller : object
+        The object calling the function.
+    Burner : any
+        Placeholder parameter.
+    """
+    pygame.mixer.music.stop()
+    caller.actionqueue = [[0,["jump",50],[None,None,True]],
+                          [0,["timeslowset",4],[None,None,True]],
+                          [60,["timeslowset",1],[None,None,True]],
+                          [30,["playSound","Win"],[None,None,None]]]
     caller.behavior = state.aisource["BossWait"]
 
     if caller.target != None:
@@ -501,6 +597,15 @@ def dieBoss(caller,Burner):
         caller.target.actionqueue.append([120,["loadnextstate",["cutscene","outro"]],[None,None,True]])
 
 def dieEnemy(caller,Burner):
+    """
+    Enemy death function.
+
+    Parameters:
+    caller : object
+        The object calling the function.
+    Burner : any
+        Placeholder parameter.
+    """
     particleSpawn(caller,[caller.pos,
                       [["DieCloud1",0,0,0,5],
                        ["DieCloud2",0,0,0,10],
@@ -516,6 +621,15 @@ def dieEnemy(caller,Burner):
     camunlock(caller,Burner)
     caller.delete()
 def diePlat(caller,particlename):
+    """
+    Collapsing Platform death function.
+
+    Parameters:
+    caller : object
+        The object calling the function.
+    Burner : any
+        Placeholder parameter.
+    """
     particleSpawn(caller,[[caller.left[0],caller.top[1]],
                       [[particlename,0,0,0,10],
                        [particlename,0,0,90,10],
