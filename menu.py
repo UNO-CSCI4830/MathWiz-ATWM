@@ -37,11 +37,8 @@ class MenuObj:
         # a click is a click; you can't run a function when it's only half.
             if state.click[0] and pygame.MOUSEBUTTONUP in state.event_types:
                 self.onClick()
-            elif pygame.MOUSEMOTION in state.event_types:
-                if self.text != "" and state.menu_button_focus == None:
-                    state.menu_button_focus = self
-                else:
-                    state.menu_button_focus = None
+            elif pygame.MOUSEMOTION in state.event_types and self.text != "":
+                state.menu_button_focus = self
         else:
             if self.graphicsdata != None:
                 self.graphics = pygame.Surface(self.graphicsdata[2:4])
