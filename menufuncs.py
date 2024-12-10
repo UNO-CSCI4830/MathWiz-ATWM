@@ -7,9 +7,17 @@ Purpose: functions for menus in "MathWiz!"
 """
 import json
 import GameData as state
+import pygame
 
 #load a menu as prescribed by the json file
 def loadmenu(menuname):
+    """
+    Loads a menu as prescribed by the JSON file.
+
+    Parameters:
+    menuname : str
+        The name of the menu to load.
+    """
     #clear all objects, resulting in their removal from memory after a while
     state.objects = []
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
@@ -19,10 +27,22 @@ def loadmenu(menuname):
     import menu
     for entity in state.menudata[menuname]:
         menu.MenuObj(entity[0],entity[1],entity[2],entity[3],entity[4],entity[5], entity[6])
+    if menuname in state.menudata["bgm"].keys():
+        pygame.mixer.music.load(f"Assets\\sounds\\music\\{state.menudata['bgm'][menuname]}.wav")
+        pygame.mixer.music.play(-1)
+    else:
+        pygame.mixer.music.stop()
     state.clock.tick()
         
 #load a level as prescribed by the json file
 def loadlevel(levelname):
+    """
+    Loads a level as prescribed by the JSON file.
+
+    Parameters:
+    levelname : str
+        The name of the level to load.
+    """
     #clear all objects, resulting in their removal from memory after a while
     """print(state.objects)
     for item in range(len(state.objects)):
@@ -43,10 +63,22 @@ def loadlevel(levelname):
             item.actionqueue.append([0,[f"levelStart",None],["time",90,None]])
             item.stun = True
             item.actionqueue.append([90,["destun",None],[None,None,None]])
+    if hasattr(state.currentlevel,"bgm"):
+        pygame.mixer.music.load(f"Assets\\sounds\\music\\{state.currentlevel.bgm}.wav")
+        pygame.mixer.music.play(-1)
+    else:
+        pygame.mixer.music.stop()
     state.clock.tick()
 
 #load the cutscene player
 def loadcutscene(scenename):
+    """
+    Loads the cutscene player with the given scene name.
+
+    Parameters:
+    scenename : str
+        The name of the cutscene to load.
+    """
     #clear all objects, resulting in their removal from memory after a while
     state.objects = []
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
