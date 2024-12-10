@@ -49,6 +49,7 @@ class MenuObj:
         state.display.blit(self.canvas,(self.pos[0]-state.cam.pos[0],self.pos[1]-state.cam.pos[1]))
         text = state.font.render(self.text,False,(0,0,90))
 
+        # allow traversal through the menus with arrow keys
         if pygame.MOUSEMOTION not in state.event_types:
             # if there was a button previously being hovered, search from that button
             if state.menu_button_focus != None:
