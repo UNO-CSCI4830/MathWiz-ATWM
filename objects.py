@@ -1386,6 +1386,16 @@ class roomLock(gameObject):
         self.getpoints()
 
     def collidefunction(self,trigger):
+        """
+    Handles the collision event with the given trigger.
+
+    This function appends the trigger to the triggers list. If the trigger has a type of Player,
+    it updates the camera position to the current object's position and locks the camera to the object.
+    It also iterates through all objects in the state and starts a fight if the object has a fightStart
+    method, collides with the current object, and is not active.
+
+    Args: trigger: The object that triggered the collision event.
+    """
         self.triggers.append(trigger)
         if type(trigger) == Player:
             state.cam.pos = self.pos.copy()
@@ -1403,6 +1413,13 @@ class Boss(Enemy):
         self.active = False
         
     def update(self):
+        """
+        Updates the state of the object.
+
+        This function calls the update method of the superclass. If the object's behavior matches its actual behavior,
+        it displays the boss's health on the HUD. It also decreases the invincibility frames (iframes) by the delta time
+        if iframes are greater than zero.
+        """
         super().update()
         if self.behavior == self.trueBehavior:
             state.HUD.blit(state.font.render(f"Boss HP:{self.health}",False,[255,0,100],[0,0,0]),(30*state.scaleamt,150*state.scaleamt))
@@ -1410,6 +1427,11 @@ class Boss(Enemy):
             self.iframes -= state.deltatime
 
     def fightStart(self):
+        """
+        Initializes the fight sequence for the object.
+        This function sets up the action queue with initial actions, sets the object's behavior to its actual behavior,
+        removes any stun effect, sets the animation name to "Intro", requests the animation to start, and marks the object as active.
+        """
         self.actionqueue = [[0,["nothing",None],["time",120,0]],[0,["setbgm","Boss Theme"],[None,None,None]]]
         self.behavior = self.trueBehavior
         self.stun = False
@@ -1418,6 +1440,14 @@ class Boss(Enemy):
         self.active = True
         
     def damagetake(self,dmg):
+        """
+        Handles the object taking damage.
+        This function decreases the object's health by the damage amount if the object is not invincible (iframes <= 0).
+        It sets the object's animation to "Hurt", requests the animation to start, and sets invincibility frames (iframes) to 90.
+        It also adds a series of actions to the action queue, including walking, jumping, stunning, and applying a temporary
+        palette effect to indicate stun. If the object's health drops to zero or below, it calls the kill method to handle the object's death.
+        Args: dmg: An amount of damage.
+        """
         if self.health > 0:
             if self.iframes <= 0:
                 self.health -= dmg
@@ -1444,6 +1474,29 @@ class Boss(Enemy):
             if self.health <= 0:
                 self.kill()
 class oneWay(gameObject):
+    """
+    A class representing a one way object in the game.
+    Attributes:
+        locus: tuple
+            The position of the object.
+        depth: int
+            The depth of the object.
+        parallax: float
+            The parallax effect value.
+        name: str
+            The name of the object.
+        layer: int
+            The layer of the object.
+        extras: dict
+            Additional attributes
+    Methods:
+        __init__(locus, depth, parallax, name, layer, extras):
+            Initializes the oneWay object with the given parameters.
+        update():
+            Updates the object's state.
+        collidefunction(trigger):
+            Handles collision logic with another object.
+    """
     def __init__(self,locus,depth,parallax,name,layer,extras):
         super().__init__(locus,depth,parallax,layer,extras)
         if hasattr(self.extras,"size"):
