@@ -495,7 +495,7 @@ def weapDefault(caller,Burner):
     """
     caller.shoottimer = 30
     basic_shot_sound.play()
-    caller.actionqueue.append([5,["firebullet",[[0,240],caller.depth,caller.parallax,"Bustershot",caller.layer,{"parent":caller}]],[None,None,True]])
+    caller.actionqueue.append([5,["firebullet",[[120*caller.direction,120],caller.depth,caller.parallax,"Bustershot",caller.layer,{"parent":caller}]],[None,None,True]])
 
 def weapDivSlice(caller,Burner):
     """
@@ -508,7 +508,7 @@ def weapDivSlice(caller,Burner):
         Placeholder parameter.
     """
     caller.shoottimer = 30
-    caller.actionqueue.append([5,["hitboxon",[[120,0],caller.depth,caller.parallax,caller.layer,{"size":[240,240],"type":"split","amt":2,"lifespan":30,"parent":caller}]],[None,None,True]])
+    caller.actionqueue.append([5,["hitboxon",[[300,0],caller.depth,caller.parallax,caller.layer,{"size":[240,240],"type":"split","amt":2,"lifespan":30,"parent":caller}]],[None,None,True]])
 
 def weapMMissile(caller,Burner):
     """
