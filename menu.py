@@ -35,7 +35,7 @@ class MenuObj:
         if (state.mouse[0] >= self.pos[0]-state.cam.pos[0] and state.mouse[0] <= self.pos[0]-state.cam.pos[0]+self.size[0]) and (state.mouse[1] <= self.pos[1]-state.cam.pos[1]+self.size[1] and state.mouse[1] >= self.pos[1]-state.cam.pos[1]):
         # check when the mouse button is being held down, but only run self.onClick() when the mouse button is released
         # a click is a click; you can't run a function when it's only half.
-            if state.click[0] and pygame.MOUSEBUTTONUP in state.event_types:
+            if (state.click[0] and pygame.MOUSEBUTTONUP in state.event_types) or (pygame.KEYUP in state.event_types and state.keys[pygame.K_RETURN]):
                 self.onClick()
             elif pygame.MOUSEMOTION in state.event_types and self.text != "":
                 state.menu_button_focus = self
