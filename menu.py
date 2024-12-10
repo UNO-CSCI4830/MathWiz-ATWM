@@ -28,19 +28,20 @@ class MenuObj:
         #re-sort list to ensure things are rendered in the right order
         state.objects.sort(key = lambda item: item.depth)
     def update(self):
+        # somewhere I removed the code that removes the main background menu art. this is another revolutionary bandaid fix
+        if self.text == "":
+            self.onHover()
         #if mouse is within button borders, render differently
         if (state.mouse[0] >= self.pos[0]-state.cam.pos[0] and state.mouse[0] <= self.pos[0]-state.cam.pos[0]+self.size[0]) and (state.mouse[1] <= self.pos[1]-state.cam.pos[1]+self.size[1] and state.mouse[1] >= self.pos[1]-state.cam.pos[1]):
         # check when the mouse button is being held down, but only run self.onClick() when the mouse button is released
         # a click is a click; you can't run a function when it's only half.
-            if state.click[0]:
-                    if pygame.MOUSEBUTTONUP in state.event_types:
-                        self.onClick()
-            else:
-                if self.text != "":
+            if state.click[0] and pygame.MOUSEBUTTONUP in state.event_types:
+                self.onClick()
+            elif pygame.MOUSEMOTION in state.event_types:
+                if self.text != "" and state.menu_button_focus == None:
                     state.menu_button_focus = self
                 else:
                     state.menu_button_focus = None
-                    self.onHover()
         else:
             if self.graphicsdata != None:
                 self.graphics = pygame.Surface(self.graphicsdata[2:4])
@@ -52,18 +53,21 @@ class MenuObj:
         text = state.font.render(self.text,False,(0,0,90))
 
         if pygame.MOUSEMOTION not in state.event_types:
-            # if there was not a button previously being hovered
+            # if there was a button previously being hovered, search from that button
             if state.menu_button_focus != None:
-                state.menu_button_focus.onHover()
+                found_button = None
                 if state.keys[pygame.K_UP]:
-                    state.menu_button_focus = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0]/2, state.menu_button_focus.pos[1]]) # upmost center point
+                    found_button = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0]/2, state.menu_button_focus.pos[1]]) # upmost center point
                 elif state.keys[pygame.K_LEFT]:
-                    state.menu_button_focus = menufuncs.search([state.menu_button_focus.pos[0], state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]/2]) # leftmost center point
+                    found_button = menufuncs.search([state.menu_button_focus.pos[0], state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]/2]) # leftmost center point
                 elif state.keys[pygame.K_RIGHT]:
-                    state.menu_button_focus = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0], state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]/2]) # rightmost center point
+                    found_button = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0], state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]/2]) # rightmost center point
                 elif state.keys[pygame.K_DOWN]:
-                    state.menu_button_focus = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0]/2, state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]]) # bottommost center point
-            else:
+                    found_button = menufuncs.search([state.menu_button_focus.pos[0] + state.menu_button_focus.size[0]/2, state.menu_button_focus.pos[1] + state.menu_button_focus.size[1]]) # bottommost center point
+                if found_button:
+                    state.menu_button_focus = found_button
+                    print(state.menu_button_focus.text)
+            else: # if there was not a button there, attempt to search from the center of the screen
                 state.menu_button_focus = menufuncs.search([state.screensize[0], state.screensize[1]])
 
         #draw to the canvas

@@ -114,6 +114,9 @@ while True:
             state.objitr -= 1
         state.objitr += 1
     #draw HUD
+    if state.menu_button_focus:
+        print(state.menu_button_focus.text) # debug statement - remove before merging
+        state.menu_button_focus.onHover()
     state.display.blit(state.HUD,(0,0))
     #display
     state.window.blit(pygame.transform.scale(state.display,(state.displaysize,state.displaysize)),(0,0))

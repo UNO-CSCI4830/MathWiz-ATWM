@@ -62,7 +62,6 @@ def search(search_pos):
             search_pos[1] -= pixel_step_count
             for button in menu_buttons:
                 if button.pos[0] < search_pos[0] < button.pos[0] + button.size[0] and button.pos[1] < search_pos[1] < button.pos[1] + button.size[1]:
-                    print("found up")
                     return button
     elif state.keys[pygame.K_LEFT]:
         while 0 < search_pos[0]:
@@ -81,7 +80,6 @@ def search(search_pos):
             search_pos[1] += pixel_step_count
             for button in menu_buttons:
                 if button.pos[0] < search_pos[0] < button.pos[0] + button.size[0] and button.pos[1] < search_pos[1] < button.pos[1] + button.size[1]:
-                    print("found down")
                     return button
     
 #nothing
