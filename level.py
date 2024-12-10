@@ -1,12 +1,13 @@
 """
 Filename: level.py
 Author(s): Taliesin Reese
-Verion: 1.13
-Date: 10/29/2024
+Verion: 1.15
+Date: 12/9/2024
 Purpose: Level class and functions for "MathWiz!"
 """
 import pygame
 import json
+import math
 import menufuncs
 #import objects
 import GameData as state
@@ -14,12 +15,59 @@ import random
 
 #this class defines the levels that the player will traverse.
 class level:
+    """
+    A class to represent a level in the game.
+
+    Attributes:
+    name : str
+        The name of the level.
+    datafile : dict
+        The JSON data of the level.
+    depths : list
+        The depth of each layer in the level.
+    parallaxes : list
+        The parallax values of each layer in the level.
+    loops : list
+        The loop settings of each layer in the level.
+    tilemap : list
+        The tile map of the level.
+    flipmap : list
+        The flip map of the level.
+    spinmap : list
+        The rotation map of the level.
+    pallatemap : list
+        The palette map of the level.
+    bgm : string
+        Name of accompanying music track
+    objs : list
+        The objects in the level.
+    animationlist : list
+        The animations in the level.
+    """
     def __init__(self,name):
+        """
+        Initializes the level with the given name.
+
+        Parameters:
+        name : str
+            The name of the level.
+        """
         self.name = name
         self.datafile = json.load(open(f"Leveldata/{name}.json"))
         self.depths = self.datafile["layerdepths"]
         self.parallaxes = self.datafile["layerparallaxes"]
         self.loops = self.datafile["layerloops"]
+        #to accurately load levels with old-style loops
+        for entry in range(len(self.loops)):
+            if type(self.loops[entry]) == bool:
+                if self.loops[entry]:
+                    self.loops[entry] = [None,None]
+                    self.loops[entry][0] = True
+                    self.loops[entry][1] = True
+                else:
+                    self.loops[entry] = [None,None]
+                    self.loops[entry][0] = False
+                    self.loops[entry][1] = False
         self.tilemap = self.datafile["tiles"]
         self.flipmap = self.datafile["flips"]
         self.spinmap = self.datafile["rotates"]
@@ -38,23 +86,79 @@ class level:
             if state.gamemode == "edit":
                 state.editobjs.append(item)
         #state.player = objects.Player([50,50],(0), "MathWiz")
+        if "bgm" in self.datafile.keys():
+            self.bgm = self.datafile["bgm"]
         state.level = self
         
 #This class is used for the rendering of levels. Each one represents a depth layer of a level that will be rendered in the appropriate order
 class drawlayer:
+    """
+    A class to represent a depth layer of a level for rendering.
+
+    Attributes:
+    level : level
+        The level to which this layer belongs.
+    layernum : int
+        The layer number.
+    longest : int
+        The longest row in the layer.
+    tallest : int
+        The tallest column in the layer.
+    width : int
+        The width of the layer in pixels.
+    height : int
+        The height of the layer in pixels.
+    workcanvas : pygame.Surface
+        The surface to draw the layer on.
+    brush : pygame.Surface
+        The surface to draw individual tiles on.
+    colorbrush : pygame.Surface
+        The surface to apply color changes to tiles.
+    brushval : int
+        The current tile value of the brush.
+    brushpal : int
+        The current palette value of the brush.
+    flipx : bool
+        Whether the brush is flipped horizontally.
+    flipy : bool
+        Whether the brush is flipped vertically.
+    rotate : int
+        The rotation of the brush in degrees.
+    loop : bool
+        Whether the layer loops.
+    depth : int
+        The depth of the layer.
+    parallax : float
+        The parallax value of the layer.
+    animationlist : list
+        The animations in the layer.
+    animtimers : list
+        The timers for each animation.
+    animframes : list
+        The current frame of each animation.
+    """
     def __init__(self,level,layernum):
+        """
+        Initializes the drawlayer with the given level and layer number.
+
+        Parameters:
+        level : level
+            The level to which this layer belongs.
+        layernum : int
+            The layer number.
+        """
         self.level = level
         self.layernum = layernum
         self.calcsize()
 
         self.animlistrecalc()
             
-        self.brush = pygame.Surface((state.tilesize,state.tilesize)).convert()
+        self.brush = pygame.Surface((math.ceil(state.tilesize*state.scaleamt),math.ceil(state.tilesize*state.scaleamt))).convert_alpha()
         self.brush.fill(state.invis)
         if state.gamemode == "edit":
             self.brush.set_colorkey(state.invis)
         
-        self.colorbrush = pygame.Surface((state.tilesize,state.tilesize)).convert()
+        self.colorbrush = pygame.Surface((math.ceil(state.tilesize*state.scaleamt),math.ceil(state.tilesize*state.scaleamt))).convert_alpha()
         self.colorbrush.fill(state.invis)
         self.colorbrush.set_colorkey(state.invis)
         
@@ -64,7 +168,7 @@ class drawlayer:
         self.flipy = False
         self.rotate = 0
         if state.gamemode == "edit":
-            self.loop = False
+            self.loop = [False,False]
         else:
             self.loop = self.level.loops[self.layernum]
         #the depth will be useful to add parallax scrolling
@@ -76,6 +180,9 @@ class drawlayer:
         self.render()
         
     def render(self):
+        """
+        Renders the layer by drawing each tile to the workcanvas.
+        """
         self.workcanvas.fill((0,0,0))
         #iterate through every row of tiles, and every tile.
         for row in range(len(self.level.tilemap[self.layernum])):
@@ -87,6 +194,9 @@ class drawlayer:
                 self.tileupdate(row,tile,tileinfo,tilenum,pallatenum)
 
     def calcsize(self):
+        """
+        Calculates the size of the layer in pixels.
+        """
         #find the longest row in the layer
         self.longest = 0
         for row in self.level.tilemap[self.layernum]:
@@ -98,14 +208,30 @@ class drawlayer:
         self.width = self.longest*state.tilesize
         self.height = self.tallest*state.tilesize
         #canvas on which the level is to be drawn
-        self.workcanvas = pygame.Surface((self.width,self.height)).convert()
+        self.workcanvas = pygame.Surface((self.width*state.scaleamt,self.height*state.scaleamt)).convert_alpha()
         if state.gamemode == "play":
             self.workcanvas.set_colorkey(state.invis)
             
     def tileupdate(self,row,tile,tileinfo,tilenum,pallatenum):
+        """
+        Updates the tile at the given position with the given information.
+
+        Parameters:
+        row : int
+            The row of the tile.
+        tile : int
+            The column of the tile.
+        tileinfo : dict
+            The information of the tile.
+        tilenum : int
+            The number of the tile.
+        pallatenum : int
+            The palette number of the tile.
+        """
         if tilenum != self.brushval or pallatenum != self.brushpal:
             self.brush.fill(state.invis)
-            self.brush.blit(state.tilesheet, (tileinfo[3][0],tileinfo[3][1]), (tileinfo[1][0],tileinfo[1][1],tileinfo[2][0],tileinfo[2][1]))
+            #print(row,tile,tileinfo,tilenum,pallatenum)
+            self.brush.blit(state.tilesheet, (tileinfo[3][0]*state.scaleamt,tileinfo[3][1]*state.scaleamt), (tileinfo[1][0]*state.scaleamt,tileinfo[1][1]*state.scaleamt,math.ceil(tileinfo[2][0]*state.scaleamt),math.ceil(tileinfo[2][1]*state.scaleamt)))
             
             """#this is a temporary rendering system. It should ultimately be replaced with graphics pulled from files based on tilenum.
             #also, only changes the brush when the tilenum is different. This hopefully saves on execution time.
@@ -156,9 +282,12 @@ class drawlayer:
             self.flipx = False
             self.flipy = False
         #render layer
-        self.workcanvas.blit(pygame.transform.flip(pygame.transform.rotate(self.brush,self.rotate),self.flipx,self.flipy),(tile*state.tilesize,row*state.tilesize))
+        self.workcanvas.blit(pygame.transform.flip(pygame.transform.rotate(self.brush,self.rotate),self.flipx,self.flipy),(math.floor(tile*state.tilesize*state.scaleamt),math.floor(row*state.tilesize*state.scaleamt)))
 
     def animlistrecalc(self):
+        """
+        Recalculates the animation list for the layer.
+        """
         self.animationlist = self.level.animationlist[self.layernum]
         self.animtimers = []
         self.animframes = []
@@ -167,6 +296,9 @@ class drawlayer:
             self.animframes.append(0)
             
     def update(self):
+        """
+        Updates the layer, including tile animations and parallax scrolling.
+        """
         #update tile animations
         #print(self.animationlist)
         for timer in range(len(self.animtimers)):
@@ -190,26 +322,27 @@ class drawlayer:
                 col = int(255*self.animtimers[sequencenum]/self.animationlist[sequencenum][3][self.animframes[sequencenum]][1])
                 row = self.animationlist[sequencenum][2]
                 tile = self.animationlist[sequencenum][1]
-                pygame.draw.rect(self.workcanvas, (0,col,col,50), (tile*state.tilesize,row*state.tilesize,state.tilesize,state.tilesize))
+                pygame.draw.rect(self.workcanvas, (0,col,col,50), (tile*state.tilesize*state.scaleamt,row*state.tilesize*state.scaleamt,state.tilesize*state.scaleamt,state.tilesize*state.scaleamt))
         #this modifier determines how much the offset of an object should be affected by it's distance from the camera in z space...sort of.
         parallaxmod = self.parallax-state.cam.depth
-        if self.loop == True:
-            screenplacemod = [((state.cam.pos[0]*parallaxmod)//self.width)*self.width,
-                             ((state.cam.pos[1]*parallaxmod)//self.height)*self.height]
-        else:
-            screenplacemod = [0,0]
+        
+        screenplacemod = [0,0]
+        if self.loop[0] == True:
+            screenplacemod[0] = ((state.cam.pos[0]*parallaxmod)//self.width)*self.width
+        if self.loop[1] == True:
+            screenplacemod[1] = ((state.cam.pos[1]*parallaxmod)//self.height)*self.height
+            
         drawspot = (screenplacemod[0]-state.cam.pos[0]*parallaxmod,
                     screenplacemod[1]-state.cam.pos[1]*parallaxmod)
-        state.display.blit(self.workcanvas,drawspot)
-        if self.loop == True:
-            match (abs(state.cam.pos[0])+state.screensize[0] > (drawspot[0]+self.longest*state.tilesize), 
-                  abs(state.cam.pos[1])+state.screensize[1] > len(self.level.tilemap[self.layernum])*state.tilesize):
-                case (True, False):
-                    state.display.blit(self.workcanvas,(drawspot[0]+self.longest*state.tilesize,drawspot[1]))
-                case (True, True):
-                    state.display.blit(self.workcanvas,(drawspot[0]+self.longest*state.tilesize,drawspot[1]))
-                    state.display.blit(self.workcanvas,(drawspot[0]+self.longest*state.tilesize,drawspot[1]+len(self.level.tilemap[self.layernum])*state.tilesize))
-                    state.display.blit(self.workcanvas,(drawspot[0],drawspot[1]+len(self.level.tilemap[self.layernum])*state.tilesize))
-                case (False, True):
-                    state.display.blit(self.workcanvas,(drawspot[0],drawspot[1]+len(self.level.tilemap[self.layernum])*state.tilesize))
-        
+        state.display.blit(self.workcanvas,(drawspot[0]*state.scaleamt,drawspot[1]*state.scaleamt))
+
+        if self.loop[0] == True:
+            if abs(state.cam.pos[0])+state.screensize[0] > (drawspot[0]+self.longest*state.tilesize):
+                state.display.blit(self.workcanvas,((drawspot[0]+self.width)*state.scaleamt,drawspot[1]*state.scaleamt))
+                
+        if self.loop[1] == True:
+            if abs(state.cam.pos[1])+state.screensize[1] > len(self.level.tilemap[self.layernum])*state.tilesize:
+                state.display.blit(self.workcanvas,((drawspot[0])*state.scaleamt,(drawspot[1]+self.height)*state.scaleamt))
+
+        if self.loop[0] and self.loop[1] and abs(state.cam.pos[0]) > (drawspot[0]+self.longest*state.tilesize) and abs(state.cam.pos[1])+state.screensize[1] > len(self.level.tilemap[self.layernum])*state.tilesize:
+            state.display.blit(self.workcanvas,((drawspot[0]+self.width)*state.scaleamt,(drawspot[1]+self.height)*state.scaleamt))

@@ -5,7 +5,31 @@ import GameData as state
 import menufuncs
 
 class cutscenePlayer:
+    """
+    A class to handle the playback of cutscenes in the game.
+
+    Attributes: 
+    video: cv2.VideoCapture
+        The video capture object for the cutscene.
+    frame: pygame.Surface
+        The surface to display the current frame of the cutscene.
+    currenttime: float
+        The current playback time of the cutscene.
+    framerate: float
+        The frame rate of the cutscene video.
+    func: str
+        The function to call after the cutscene ends.
+    funcargs: list
+        The arguments to pass to the function after the cutscene ends.
+    """
     def __init__(self,name):
+        """
+        Initializes the cutscene player with the given cutscene name.
+
+        Parameters:
+        name: str
+            The name of the cutscene to play.
+        """
         path = "Assets\\cutscene\\" + name + ".mp4"
         self.video = cv2.VideoCapture(path)
         self.frame = pygame.Surface((state.screensize[0],state.screensize[1]))
@@ -17,6 +41,9 @@ class cutscenePlayer:
         #load cutscene audio. Sadly must be stored separately
         pygame.mixer.music.load(f"Assets\\cutscene\\{name}.wav")
     def update(self):
+        """
+        Updates the cutscene player, advancing the video and audio playback.
+        """
         #update the timer
         self.currenttime += state.deltatime
         usetime = int(self.currenttime*(self.framerate/state.fpsTarget))
@@ -29,7 +56,7 @@ class cutscenePlayer:
             pygame.mixer.music.play()
         if returnval == True and (True not in state.keys):
             #convert to a pygame image
-            self.frame.blit(pygame.transform.scale(pygame.image.frombuffer(rawimage.tostring(),rawimage.shape[1::-1],"BGR"),[state.screensize[0],state.screensize[1]]),(0,0))
+            self.frame.blit(pygame.transform.scale(pygame.image.frombuffer(rawimage.tostring(),rawimage.shape[1::-1],"BGR"),[state.screensize[0]*state.scaleamt,state.screensize[1]*state.scaleamt]),(0,0))
             #draw to screen
             state.display.blit(self.frame,(0,0))
         else:
