@@ -11,7 +11,6 @@ import math
 import menufuncs
 #import objects
 import GameData as state
-import random
 
 #this class defines the levels that the player will traverse.
 class level:
