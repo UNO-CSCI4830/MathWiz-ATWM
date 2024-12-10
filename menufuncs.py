@@ -84,6 +84,7 @@ def loadcutscene(scenename):
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
     state.cam.focusobj = None
     state.cam.locks = []
+    pygame.mixer.music.stop()
     import cutscene
     cutscene.cutscenePlayer(scenename)
     state.clock.tick()

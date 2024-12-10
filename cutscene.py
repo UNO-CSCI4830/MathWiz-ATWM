@@ -1,3 +1,10 @@
+"""
+Filename: cutscene.py
+Author: Taliesin Reese
+Version: 1.5
+Date: 12/10/2024
+Purpose: Play cutscenes for MathWiz!
+"""
 import pygame
 import cv2
 import GameData as state
@@ -34,7 +41,7 @@ class cutscenePlayer:
         self.video = cv2.VideoCapture(path)
         self.frame = pygame.Surface((state.screensize[0],state.screensize[1]))
         self.currenttime = 0
-        self.framerate = self.video.get(cv2.CAP_PROP_FPS)
+        self.framerate = self.video.get(cv2.CAP_PROP_FPS)/1000
         state.objects.append(self)
         self.func = state.cutscenesource[name][0]
         self.funcargs = state.cutscenesource[name][1]
@@ -46,7 +53,7 @@ class cutscenePlayer:
         """
         #update the timer
         self.currenttime += state.deltatime
-        usetime = int(self.currenttime*(self.framerate/state.fpsTarget))
+        usetime = int(pygame.mixer.music.get_pos()*self.framerate)
         #print(self.currenttime,usetime)
         #get the current frame of video as a cv2 image
         self.video.set(cv2.CAP_PROP_POS_FRAMES,usetime)

@@ -1,6 +1,7 @@
 {
     "testcutscene":["loadmenu",["test"]],
     "testend":["loadmenu",["test"]],
+    "expoend":["loadmenu",["test"]],
     "Intro":["loadmenu",["test"]],
     "outro":["loadmenu",["test"]]
 }

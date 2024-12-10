@@ -325,23 +325,26 @@ def split(caller,num):
     else:
         max = 3
     if caller.extras["divIterations"] <= max:
-        for loop in range(num):
-            if type(caller).__name__=="Enemy":
-                newpos = [caller.pos[0] + caller.direction*caller.size[0]/num, caller.pos[1]]
-                caller.direction = caller.direction * (-1 ** loop)
-            elif type(caller).__name__ =="Projectile":
-                newpos = [caller.pos[0]-caller.gun.pos[0],caller.pos[1]-caller.gun.pos[1]]
-                caller.extras["angle"] = (90-(180/num*(loop+1))+(180/(num*2)))/2
-                caller.extras["flip"] = caller.direction
-            if hasattr(caller,"name"):
-                obj = state.maker.make_obj(type(caller).__name__, [newpos,caller.depth,caller.parallax,caller.name,caller.layer,caller.extras.copy()])
-            else:
-                obj = state.maker.make_obj(type(caller).__name__, [newpos,caller.depth,caller.parallax,caller.extras.copy()])
-            if type(caller).__name__!="Projectile":
-                obj.actionqueue=[[0,["nothing",None],["time",10*loop,True]]]
-                obj.iframes = 60
-                obj.damagetake(0)
-        caller.lifespan = 0
+        match type(caller).__name__:
+            case "Enemy":
+                for loop in range(num):
+                    newpos = [caller.top[0] + caller.direction*caller.size[0]/num, caller.pos[1]]
+                    caller.direction = caller.direction * (-1 ** loop)
+                    if hasattr(caller,"name"):
+                        obj = state.maker.make_obj(type(caller).__name__, [newpos,caller.depth,caller.parallax,caller.name,caller.layer,caller.extras.copy()])
+                    else:
+                        obj = state.maker.make_obj(type(caller).__name__, [newpos,caller.depth,caller.parallax,caller.extras.copy()])
+                    obj.actionqueue=[[0,["nothing",None],["time",10*loop,True]]]
+                    obj.iframes = 60
+                    obj.damagetake(0)
+                caller.delete()
+            case "Projectile":
+                for loop in range(num):
+                    newpos = [caller.pos[0]-caller.gun.pos[0],caller.pos[1]-caller.gun.pos[1]]
+                    caller.extras["angle"] = (90-(180/num*(loop+1))+(180/(num*2)))/2
+                    caller.extras["flip"] = caller.direction
+                    obj = state.maker.make_obj(type(caller).__name__, [newpos,caller.depth,caller.parallax,caller.name,caller.layer,caller.extras.copy()])
+                caller.lifespan = 0
 
     
 def destun(caller,data):
@@ -492,7 +495,7 @@ def weapDefault(caller,Burner):
     """
     caller.shoottimer = 30
     basic_shot_sound.play()
-    caller.actionqueue.append([5,["firebullet",[[0,120],caller.depth,caller.parallax,"Bustershot",caller.layer,{"parent":caller}]],[None,None,True]])
+    caller.actionqueue.append([5,["firebullet",[[0,240],caller.depth,caller.parallax,"Bustershot",caller.layer,{"parent":caller}]],[None,None,True]])
 
 def weapDivSlice(caller,Burner):
     """
@@ -594,7 +597,7 @@ def dieBoss(caller,Burner):
         caller.target.speed[0] = 0
         caller.target.animname = "Win"
         caller.target.requestanim = True
-        caller.target.actionqueue.append([120,["loadnextstate",["cutscene","outro"]],[None,None,True]])
+        caller.target.actionqueue.append([120,["loadnextstate",["cutscene",f"expoend"]],[None,None,True]])
 
 def dieEnemy(caller,Burner):
     """
