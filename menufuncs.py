@@ -6,6 +6,7 @@ Date: 11/06/2024
 Purpose: functions for menus in "MathWiz!"
 """
 import json
+import pygame
 import GameData as state
 
 #contrary to the name, these functions are used outside of menus as well
@@ -47,6 +48,41 @@ def loadcutscene(scenename):
     state.cam.focus = [state.screensize[0]/2,state.screensize[1]/2]
     import cutscene
     cutscene.cutscenePlayer(scenename)
+
+# with arrow keys, search for other buttons in the menu
+def search(search_pos):
+    menu_buttons = []
+    for obj in state.objects:
+        if type(obj).__name__ == "MenuObj" and obj.text != "":
+            menu_buttons.append(obj)
+
+    pixel_step_count = 5
+    if state.keys[pygame.K_UP]:
+        while 0 < search_pos[1]:
+            search_pos[1] -= pixel_step_count
+            for button in menu_buttons:
+                if button.pos[0] < search_pos[0] < button.pos[0] + button.size[0] and button.pos[1] < search_pos[1] < button.pos[1] + button.size[1]:
+                    print("found up")
+                    return button
+    elif state.keys[pygame.K_LEFT]:
+        while 0 < search_pos[0]:
+            search_pos[0] -= pixel_step_count
+            for button in menu_buttons:
+                if button.pos[0] < search_pos[0] < button.pos[0] + button.size[0] and button.pos[1] < search_pos[1] < button.pos[1] + button.size[1]:
+                    return button
+    elif state.keys[pygame.K_RIGHT]:
+        while search_pos[0] < state.screensize[0]:
+            search_pos[0] += pixel_step_count
+            for button in menu_buttons:
+                if button.pos[0] < search_pos[0] < button.pos[0] + button.size[0] and button.pos[1] < search_pos[1] < button.pos[1] + button.size[1]:
+                    return button
+    elif state.keys[pygame.K_DOWN]:
+        while search_pos[1] < state.screensize[1]:
+            search_pos[1] += pixel_step_count
+            for button in menu_buttons:
+                if button.pos[0] < search_pos[0] < button.pos[0] + button.size[0] and button.pos[1] < search_pos[1] < button.pos[1] + button.size[1]:
+                    print("found down")
+                    return button
     
 #nothing
 def nothing(nothing):
