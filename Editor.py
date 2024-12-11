@@ -25,7 +25,9 @@ toolvar = 0
 state.wasclick = [0,0,0,0,0]
 #create stuff for level rendering
 state.tilesize = 120
+state.displaysize = [state.tilesize*30,state.tilesize*30]
 state.screensize = (state.tilesize*30,state.tilesize*30)
+state.scaleamt = state.displaysize[0]/state.screensize[0]
 state.window = pygame.display.set_mode((600,600))
 state.tilesource = json.load(open("tiles.json"))
 state.tilesheet = pygame.image.load("Assets/images/tiles.png").convert()
@@ -43,6 +45,7 @@ state.cam = Cam.cam()
 state.gamemode = "edit"
 state.invis = (255,0,255)
 state.level = level.level("blank")
+
 
 
 #main loop

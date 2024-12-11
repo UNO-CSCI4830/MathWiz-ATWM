@@ -47,6 +47,7 @@ class cutscenePlayer:
         self.funcargs = state.cutscenesource[name][1]
         #load cutscene audio. Sadly must be stored separately
         pygame.mixer.music.load(f"Assets\\cutscene\\{name}.wav")
+        pygame.mixer.music.play()
     def update(self):
         """
         Updates the cutscene player, advancing the video and audio playback.
@@ -60,7 +61,7 @@ class cutscenePlayer:
         returnval, rawimage = self.video.read()
         self.frame.fill((0,0,0))
         if not pygame.mixer.music.get_busy():
-            pygame.mixer.music.play()
+            returnval = False
         if returnval == True and (True not in state.keys):
             #convert to a pygame image
             self.frame.blit(pygame.transform.scale(pygame.image.frombuffer(rawimage.tostring(),rawimage.shape[1::-1],"BGR"),[state.screensize[0]*state.scaleamt,state.screensize[1]*state.scaleamt]),(0,0))

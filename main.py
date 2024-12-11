@@ -6,6 +6,7 @@ Date: 11/25/2024
 Purpose: Core file for "MathWiz!"
 """
 #premade library imports
+from sys import exit as exitfunc
 import pygame
 import json
 
@@ -20,6 +21,7 @@ import maker
 
 #initialize pygame stuffs
 pygame.init()
+pygame.mixer.init()
 
 #Load settings
 state.savedata = json.load(open("Save.json"))
@@ -42,6 +44,7 @@ state.display = pygame.Surface([state.screensize[0]*state.scaleamt,state.screens
 state.HUD = pygame.Surface([state.screensize[0]*state.scaleamt,state.screensize[1]*state.scaleamt])
 state.font = pygame.font.SysFont("Lucida Console",int(75*state.scaleamt))
 pygame.display.set_caption("MATHWIZ! The Test Run")
+pygame.display.set_icon(pygame.transform.scale(pygame.image.load("Assets/images/MathWizProgramSymbol.png"),(32,32)))
 
 #initialize timer
 state.clock = pygame.time.Clock()
@@ -60,6 +63,19 @@ state.menudata = json.load(open("menus.json"))
 state.tilesource = json.load(open("tiles.json"))
 state.particlesource = json.load(open("particles.json"))
 state.cutscenesource = json.load(open("cutscenes.json"))
+
+state.jump_sound = pygame.mixer.Sound("Assets/sounds/sfx/Jump.mp3")
+state.jump_sound.set_volume(.5)
+state.basic_shot_sound = pygame.mixer.Sound("Assets/sounds/sfx/Magic Shot.mp3")
+state.basic_shot_sound.set_volume(.5)
+state.flaming_shot_sound = pygame.mixer.Sound("Assets/sounds/sfx/FireShot.mp3")
+state.flaming_shot_sound.set_volume(.5)
+state.explosion_sound = pygame.mixer.Sound("Assets/sounds/sfx/Explosion.mp3")
+state.explosion_sound.set_volume(.5)
+state.hit_sound = pygame.mixer.Sound("Assets/sounds/sfx/Magic Hit.mp3")
+state.hit_sound.set_volume(.3)
+state.enemy_defeat_sound = pygame.mixer.Sound("Assets/sounds/sfx/EnemyDeath.mp3")
+state.enemy_defeat_sound.set_volume(.7)
 
 #initialize game stuffs
 state.gamemode = "play"
@@ -105,7 +121,7 @@ while True:
         #quit logic
         if event.type == pygame.QUIT:
             pygame.quit()
-            quit()
+            exitfunc()
         if event.type == pygame.KEYDOWN:
             #if a key is newly down on this frame, it's important. Add it to newkeys
             state.newkeys.append(event.key)

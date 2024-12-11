@@ -8,21 +8,6 @@ Purpose: moves to be used in "MathWiz!"
 import GameData as state
 import pygame
 import menufuncs
-pygame.init()
-pygame.mixer.init()
-
-jump_sound = pygame.mixer.Sound("Assets/sounds/sfx/Jump.mp3")
-jump_sound.set_volume(.5)
-basic_shot_sound = pygame.mixer.Sound("Assets/sounds/sfx/Magic Shot.mp3")
-basic_shot_sound.set_volume(.5)
-flaming_shot_sound = pygame.mixer.Sound("Assets/sounds/sfx/FireShot.mp3")
-flaming_shot_sound.set_volume(.5)
-explosion_sound = pygame.mixer.Sound("Assets/sounds/sfx/Explosion.mp3")
-explosion_sound.set_volume(.5)
-hit_sound = pygame.mixer.Sound("Assets/sounds/sfx/Magic Hit.mp3")
-hit_sound.set_volume(.3)
-enemy_defeat_sound = pygame.mixer.Sound("Assets/sounds/sfx/EnemyDeath.mp3")
-enemy_defeat_sound.set_volume(.7)
 from copy import deepcopy
 #set vertical velocity to the jumpspeed
 def jump(caller, height):
@@ -36,7 +21,7 @@ def jump(caller, height):
         The height of the jump.
     """
     caller.speed[1] = -height
-    jump_sound.play()
+    state.jump_sound.play()
     caller.grounded = False
             
 def jumpstall(caller,height):
@@ -302,7 +287,7 @@ def stun(caller,data):
     if not caller.stun:
         tempPallate(caller,"Stun")
         caller.stun = True
-        hit_sound.play()
+        state.hit_sound.play()
 
 def split(caller,num):
     """
@@ -494,7 +479,7 @@ def weapDefault(caller,Burner):
         Placeholder parameter.
     """
     caller.shoottimer = 30
-    basic_shot_sound.play()
+    state.basic_shot_sound.play()
     caller.actionqueue.append([5,["firebullet",[[120*caller.direction,120],caller.depth,caller.parallax,"Bustershot",caller.layer,{"parent":caller}]],[None,None,True]])
 
 def weapDivSlice(caller,Burner):
@@ -522,7 +507,7 @@ def weapMMissile(caller,Burner):
     """
     #caller.actionqueue.append([0,["jump",10],["keys",pygame.K_f,False]])caller.shoottimer = 30
     caller.shoottimer = 30
-    flaming_shot_sound.play()
+    state.flaming_shot_sound.play()
     caller.actionqueue.append([5,["firebullet",[[120,0],caller.depth,caller.parallax,"Missile",caller.layer,{"parent":caller}]],[None,None,True]])
 
 def weapdirtycheaterpower(caller,Burner):
@@ -554,7 +539,7 @@ def dieDefault(caller,Burner):
         child.delete()
     camunlock(caller,Burner)
     caller.delete()
-    enemy_defeat_sound.play()
+    state.enemy_defeat_sound.play()
 
 def diePlayer(caller,Burner):
     """
