@@ -1,9 +1,7 @@
-# MathWiz: A THREAT WITH~~OUT~~ MEASURE
+# MathWiz: The Test Run
 by *Visible Softworks*
 
-*There was peace in the kingdom for many years, upheld by two Wizards who defended the land--A Husband and Wife. But then the evil sorceror __Algebrak__ defeated the guardians, trapping them within a Crystal Ball. With the land's defenders defeated, nothing would stop Algebrak and his __Dark Mage Order__ from taking over the land and ushering in a reign of terror. Except, perhaps, for...*
-
-_**The MathWiz!** The very son of the two wizards must step up to defeat each of Algebrak's Generals, combining their magicks to break the seal on Algebrak's fortress, defeat the mad mage, and free his family and the whole kingdom. He'll have to put his noggin to work, because each of the generals is using a specific mathematical principle in their spells. Can MathWiz overcome such slings and arrows?_
+_**The MathWiz** has yet to go on any noteable adventures. But he still does some pretty cool stuff in his day-to-day goings (He is a wizard after all).  When he heads off to the Blasted Cliffs to do some research and is impeded by an evil mage and legions of shadow clones, what will he do?_
 
 _Well, I'm not telling. You'll have to play the game to find that out._
 
