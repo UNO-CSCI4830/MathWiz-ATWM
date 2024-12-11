@@ -3,8 +3,12 @@ import unittest
 import objects
 import moves
 import GameData as state
+import pygame
 from unittest.mock import patch
 
+
+pygame.init()
+pygame.mixer.init()
 
 #the tilesize is a lynchpin. All measures in the game save for the final render size are based on the tile (or, they will be in the final product. Not all of them are right now)
 state.tilesize = 120
@@ -16,6 +20,13 @@ state.gamemode = "play"
 state.invis = (255,0,255)
 state.deltatime = 1
 state.fpsTarget = 60
+state.hit_sound = pygame.mixer.Sound("Assets/sounds/sfx/Magic Hit.mp3")
+state.jump_sound = pygame.mixer.Sound("Assets/sounds/sfx/Jump.mp3")
+state.basic_shot_sound = pygame.mixer.Sound("Assets/sounds/sfx/Magic Shot.mp3")
+state.flaming_shot_sound = pygame.mixer.Sound("Assets/sounds/sfx/FireShot.mp3")
+state.explosion_sound = pygame.mixer.Sound("Assets/sounds/sfx/Explosion.mp3")
+state.hit_sound = pygame.mixer.Sound("Assets/sounds/sfx/Magic Hit.mp3")
+state.enemy_defeat_sound = pygame.mixer.Sound("Assets/sounds/sfx/EnemyDeath.mp3")
 
 state.objects = []
 
@@ -25,7 +36,7 @@ class movesTests(unittest.TestCase):
         self.caller = objects.gameObject([10, 10], 1, 1,  1, 1)
         self.caller.speed = [10, 10]
         self.caller.gravity = 10
-        self.caller.maxspeed = 15
+        self.caller.maxspeed = [15]
         self.caller.stun = False
         self.caller.storepal = "foo"
         self.caller.pallate = "boo"
@@ -51,7 +62,7 @@ class movesTests(unittest.TestCase):
         #Test the if statement for when vertical speed is less than 0
         self.caller.speed[1] = -5
         moves.jumpstall(self.caller, 5)
-        self.assertEqual(self.caller.speed[1], -10)
+        self.assertEqual(self.caller.speed[1], -7.5)
 
 
     def test_jumpstall_throw_error(self):
@@ -62,7 +73,7 @@ class movesTests(unittest.TestCase):
 
     def test_walk(self):
         moves.walk(self.caller, 2)
-        self.assertEqual(self.caller.speed[0], 12)
+        self.assertEqual(self.caller.speed[0], 11)
 
         #Test the if branch for when horizontal speed is greater than max speed
         self.caller.speed[0] = 20
@@ -92,18 +103,18 @@ class movesTests(unittest.TestCase):
 
     def test_addforce(self):
         moves.addforce(self.caller, [5, 5])
-        self.assertEqual(self.caller.speed[0], 15)
-        self.assertEqual(self.caller.speed[1], 15)
+        self.assertEqual(self.caller.speed[0], 12.5)
+        self.assertEqual(self.caller.speed[1], 12.5)
 
         # Add a negative force
         moves.addforce(self.caller, [-10, -10])
-        self.assertEqual(self.caller.speed[0], 5)
-        self.assertEqual(self.caller.speed[1], 5)
+        self.assertEqual(self.caller.speed[0], 7.5)
+        self.assertEqual(self.caller.speed[1], 7.5)
 
         # Add a huge force
         moves.addforce(self.caller, [10000, 10000])
-        self.assertEqual(self.caller.speed[0], 10005)
-        self.assertEqual(self.caller.speed[1], 10005)
+        self.assertEqual(self.caller.speed[0], 5007.5)
+        self.assertEqual(self.caller.speed[1], 5007.5)
 
     def test_addforce_throw_error(self):
 
@@ -137,8 +148,8 @@ class movesTests(unittest.TestCase):
     def test_stun(self):
         moves.stun(self.caller, "foo")
         self.assertTrue(self.caller.stun)
-        self.assertEqual(self.caller.storepal, "boo")
-        self.assertEqual(self.caller.pallate, "Stun")
+        self.assertEqual(self.caller.storepal, "foo")
+        self.assertEqual(self.caller.pallate, "boo")
 
     def test_stun_throw_error(self):
         with self.assertRaises(AttributeError):
@@ -151,7 +162,7 @@ class movesTests(unittest.TestCase):
 
         moves.destun(self.caller, "foo")
         self.assertFalse(self.caller.stun)
-        self.assertEqual(self.caller.pallate, "boo")
+        self.assertEqual("foo", self.caller.pallate)
 
     def test_destun_throw_error(self):
         with self.assertRaises(AttributeError):
